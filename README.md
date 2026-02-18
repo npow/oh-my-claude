@@ -20,6 +20,10 @@ Restart Claude Code and you're done.
 
 ## Pick your vibe
 
+```bash
+omc theme tamagotchi
+```
+
 ### `tamagotchi` -- virtual pet, growing garden, draining coffee
 
 ![tamagotchi theme](screenshots/tamagotchi.png)
