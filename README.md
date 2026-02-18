@@ -24,7 +24,9 @@ Restart Claude Code and you're done.
 
 ![tamagotchi theme](screenshots/tamagotchi.png)
 
-`{ "theme": "tamagotchi" }`
+```json
+{ "theme": "tamagotchi" }
+```
 
 ---
 
@@ -32,7 +34,9 @@ Restart Claude Code and you're done.
 
 ![boss-battle theme](screenshots/boss-battle.png)
 
-`{ "theme": "boss-battle" }`
+```json
+{ "theme": "boss-battle" }
+```
 
 ---
 
@@ -40,7 +44,9 @@ Restart Claude Code and you're done.
 
 ![danger-zone theme](screenshots/danger-zone.png)
 
-`{ "theme": "danger-zone" }`
+```json
+{ "theme": "danger-zone" }
+```
 
 ---
 
@@ -48,7 +54,9 @@ Restart Claude Code and you're done.
 
 ![rpg theme](screenshots/rpg-developer.png)
 
-`{ "theme": "rpg" }`
+```json
+{ "theme": "rpg" }
+```
 
 ---
 
@@ -56,7 +64,9 @@ Restart Claude Code and you're done.
 
 ![coworker theme](screenshots/coworker.png)
 
-`{ "theme": "coworker" }`
+```json
+{ "theme": "coworker" }
+```
 
 ---
 
@@ -64,7 +74,9 @@ Restart Claude Code and you're done.
 
 ![narrator theme](screenshots/narrator.png)
 
-`{ "theme": "narrator" }`
+```json
+{ "theme": "narrator" }
+```
 
 ---
 
