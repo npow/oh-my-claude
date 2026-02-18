@@ -14,7 +14,7 @@ npm install -g @npow/oh-my-claude
 omc install
 ```
 
-Restart Claude Code and you're done.
+That's it -- takes effect immediately, no restart needed.
 
 ---
 
@@ -230,7 +230,7 @@ export function render(data, config) {
 }
 ```
 
-Add it to your theme, restart Claude Code, done. Three rules: export `meta`, export `render`, return `{ text, style }` or `null`.
+Add it to your theme and it takes effect immediately. Three rules: export `meta`, export `render`, return `{ text, style }` or `null`.
 
 Full data field reference: [docs/segment-contract.md](docs/segment-contract.md)
 
