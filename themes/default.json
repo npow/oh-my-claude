@@ -1,0 +1,59 @@
+{
+  "name": "default",
+  "description": "Clean two-line statusline. No special fonts required. Works everywhere.",
+  "lines": [
+    {
+      "left": ["model-name", "directory", "git-branch", "git-status"],
+      "right": ["lines-changed", "session-timer"]
+    },
+    {
+      "left": ["context-bar"],
+      "right": ["session-cost"]
+    }
+  ],
+  "separator": " ",
+  "segments": {
+    "model-name": {
+      "style": "bold cyan",
+      "icon": false
+    },
+    "directory": {
+      "style": "white",
+      "format": "basename"
+    },
+    "git-branch": {
+      "style": "green",
+      "icon": false,
+      "maxLength": 30
+    },
+    "git-status": {
+      "style": "yellow",
+      "format": "short"
+    },
+    "lines-changed": {
+      "style": "dim",
+      "hideIfZero": true
+    },
+    "session-timer": {
+      "style": "dim"
+    },
+    "context-bar": {
+      "width": 20,
+      "charFilled": "\u2593",
+      "charEmpty": "\u2591",
+      "warnAt": 60,
+      "criticalAt": 80,
+      "showPercent": true,
+      "styleOk": "green",
+      "styleWarn": "bold yellow",
+      "styleCritical": "bold red"
+    },
+    "session-cost": {
+      "style": "dim",
+      "format": "$",
+      "plan": null,
+      "styleWarn": "bold yellow",
+      "styleCritical": "bold red"
+    }
+  }
+}

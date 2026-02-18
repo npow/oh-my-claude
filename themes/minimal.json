@@ -1,0 +1,37 @@
+{
+  "name": "minimal",
+  "description": "Single-line, text-only. No bars, no icons, no fuss.",
+  "lines": [
+    {
+      "left": ["directory", "git-branch", "git-status"],
+      "right": ["context-percent", "session-cost"]
+    }
+  ],
+  "separator": " \u00b7 ",
+  "segments": {
+    "directory": {
+      "style": "white",
+      "format": "basename"
+    },
+    "git-branch": {
+      "style": "green",
+      "icon": false,
+      "maxLength": 20
+    },
+    "git-status": {
+      "style": "yellow",
+      "format": "short"
+    },
+    "context-percent": {
+      "style": "white",
+      "warnAt": 60,
+      "criticalAt": 80,
+      "styleWarn": "yellow",
+      "styleCritical": "red"
+    },
+    "session-cost": {
+      "style": "dim",
+      "format": "$"
+    }
+  }
+}

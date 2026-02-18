@@ -1,0 +1,73 @@
+{
+  "name": "powerline",
+  "description": "Full powerline with Nerd Font icons and arrow separators. Requires a Nerd Font.",
+  "lines": [
+    {
+      "left": ["model-name", "separator-arrow", "directory", "separator-arrow", "git-branch", "git-status"],
+      "right": ["lines-changed", "separator-arrow", "session-timer"]
+    },
+    {
+      "left": ["context-bar", "separator-arrow", "context-tokens"],
+      "right": ["session-cost", "separator-arrow", "vim-mode"]
+    }
+  ],
+  "separator": " ",
+  "segments": {
+    "model-name": {
+      "style": "bold cyan",
+      "icon": true
+    },
+    "directory": {
+      "style": "blue",
+      "format": "fish",
+      "icon": true
+    },
+    "git-branch": {
+      "style": "green",
+      "icon": true,
+      "maxLength": 25
+    },
+    "git-status": {
+      "style": "yellow",
+      "format": "detailed"
+    },
+    "lines-changed": {
+      "style": "dim",
+      "hideIfZero": true
+    },
+    "session-timer": {
+      "style": "dim",
+      "icon": true
+    },
+    "context-bar": {
+      "width": 15,
+      "charFilled": "\u2588",
+      "charEmpty": "\u2591",
+      "warnAt": 60,
+      "criticalAt": 80,
+      "showPercent": true,
+      "styleOk": "green",
+      "styleWarn": "yellow",
+      "styleCritical": "red"
+    },
+    "context-tokens": {
+      "style": "dim",
+      "format": "short"
+    },
+    "session-cost": {
+      "style": "white",
+      "format": "$",
+      "warnAt": 5.0,
+      "styleWarn": "yellow",
+      "icon": true
+    },
+    "vim-mode": {
+      "styleNormal": "bold green",
+      "styleInsert": "bold blue"
+    },
+    "separator-arrow": {
+      "style": "dim",
+      "char": "\ue0b0"
+    }
+  }
+}
