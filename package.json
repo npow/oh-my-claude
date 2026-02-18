@@ -1,10 +1,10 @@
 {
-  "name": "oh-my-claude",
+  "name": "@npow/oh-my-claude",
   "version": "0.1.0",
   "description": "The framework for Claude Code statuslines. 300+ segments. Themes. Plugins.",
   "type": "module",
   "bin": {
-    "omc": "./bin/omc.js"
+    "omc": "bin/omc.js"
   },
   "main": "./src/runner.js",
   "scripts": {
