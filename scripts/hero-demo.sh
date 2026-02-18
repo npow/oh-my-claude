@@ -2,7 +2,7 @@
 # Hero demo script — outputs each theme with a fake Claude Code input box
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-PAD="  "
+PAD="    "
 
 echo '{"lastDate":"'"$(date +%Y-%m-%d)"'","count":7}' > /tmp/omc-streak.json
 
