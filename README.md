@@ -7,8 +7,24 @@
 [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 [![node](https://img.shields.io/node/v/@npow/oh-my-claude)](package.json)
 
+## Install
+
 ```bash
 npx @npow/oh-my-claude
+```
+
+Picks a theme, writes the config, wires up Claude Code. Restart Claude Code and you're done.
+
+Config lives at `~/.claude/oh-my-claude/config.json` -- pick a theme, toggle segments, set budgets:
+
+```json
+{
+  "theme": "default",
+  "segments": {
+    "session-cost": { "plan": "pro" },
+    "context-bar": { "warnAt": 60, "criticalAt": 80 }
+  }
+}
 ```
 
 ---
@@ -168,24 +184,6 @@ Add it to your theme, restart Claude Code, done. Three rules: export `meta`, exp
 Full data field reference: [docs/segment-contract.md](docs/segment-contract.md)
 
 **Share your segment:** PR it into `src/segments/` or post your `segment.js` anywhere -- others drop it in their plugins directory.
-
----
-
-## Configuration
-
-Config lives at `~/.claude/oh-my-claude/config.json`:
-
-```json
-{
-  "theme": "default",
-  "segments": {
-    "session-cost": { "plan": "pro" },
-    "context-bar": { "warnAt": 60, "criticalAt": 80 }
-  }
-}
-```
-
-Pick a theme, override any segment config, done.
 
 ---
 
