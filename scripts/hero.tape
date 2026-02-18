@@ -6,7 +6,7 @@ Output screenshots/hero.gif
 Set Shell "bash"
 Set FontSize 15
 Set Width 1100
-Set Height 250
+Set Height 165
 Set Padding 12
 Set Theme "Catppuccin Mocha"
 Set CursorBlink false
