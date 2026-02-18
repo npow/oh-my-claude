@@ -13,7 +13,7 @@
 npx @npow/oh-my-claude
 ```
 
-Picks a theme, writes the config, wires up Claude Code. Restart Claude Code and you're done.
+Pick a theme, write the config, wire up Claude Code. Restart Claude Code and you're done.
 
 Config lives at `~/.claude/oh-my-claude/config.json` -- pick a theme, toggle segments, set budgets:
 
