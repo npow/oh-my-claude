@@ -2,6 +2,8 @@
 
 **Like oh-my-zsh, but for Claude Code.** An extensible statusline framework with themes and plugins.
 
+![oh-my-claude themes](screenshots/hero.gif)
+
 [![npm version](https://img.shields.io/npm/v/@npow/oh-my-claude)](https://www.npmjs.com/package/@npow/oh-my-claude)
 [![CI](https://img.shields.io/github/actions/workflow/status/npow/oh-my-claude/ci.yml?label=CI)](https://github.com/npow/oh-my-claude/actions/workflows/ci.yml)
 [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
