@@ -4,9 +4,8 @@
 
 A statusline framework for Claude Code's `--statusline` feature. 41 segments, 3 themes, a plugin system, one command to install.
 
-<!-- badges -->
-<!-- ![npm version](https://img.shields.io/npm/v/oh-my-claude) -->
-<!-- ![license](https://img.shields.io/github/license/...) -->
+[![npm version](https://img.shields.io/npm/v/@npow/oh-my-claude)](https://www.npmjs.com/package/@npow/oh-my-claude)
+[![license](https://img.shields.io/github/license/npow/oh-my-claude)](LICENSE)
 
 ---
 
@@ -14,15 +13,17 @@ A statusline framework for Claude Code's `--statusline` feature. 41 segments, 3 
 
 **Default theme** -- two lines, works in every terminal:
 
-```
- Opus  myproject  main +2 ~1                          +83 -21  15m 0s
- ▓▓▓▓▓▓▓░░░░░░░░░░░░░ 35%                                      $4.56
+```ansi
+ [1;36mOpus[0m  [37mmyproject[0m  [32mmain[0m [33m+2 ~1[0m                          [2m+83 -21[0m  [2m15m 0s[0m
+ [32m▓▓▓▓▓▓▓░░░░░░░░░░░░░ 35%[0m                                      [2m$4.56[0m
 ```
 
 Context filling up? The bar changes color so you know before you hit the wall:
 
-```
- ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░ 80%    <-- turns red here
+```ansi
+ [32m▓▓▓▓▓▓░░░░░░░░░░░░░░ 30%[0m   ← green, you're fine
+ [1;33m▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░ 60%[0m   ← [1;33myellow, heads up[0m
+ [1;31m▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░ 80%[0m   ← [1;31mred, time to /compact[0m
 ```
 
 ---
@@ -51,29 +52,29 @@ That's it. Picks a theme, writes the config, wires up Claude Code. Restart Claud
 41 segments. Mix and match to build the statusline that fits how you work. Here are four setups to show the range.
 
 **The Productivity Setup:**
-```
- Opus  myproject  main +2 ~1                          +83 -21  15m 0s
- ▓▓▓▓▓▓▓░░░░░░░░░░░░░ 35%                                      $4.56
+```ansi
+ [1;36mOpus[0m  [37mmyproject[0m  [32mmain[0m [33m+2 ~1[0m                          [2m+83 -21[0m  [2m15m 0s[0m
+ [32m▓▓▓▓▓▓▓░░░░░░░░░░░░░ 35%[0m                                      [2m$4.56[0m
 ```
 Context bar, git info, cost tracking, lines changed, session timer. Everything you need, nothing you don't.
 
 **The Fun Setup:**
-```
- (^.^)  ✨ vibing  🥠 "Weeks of coding can save hours of planning"
- 🏕️ Base Camp (12%) +47 gold            =^._.^= *perks up*  [████]
+```ansi
+ (^.^)  [36m✨ vibing[0m  [2;3m🥠 "Weeks of coding can save hours of planning"[0m
+ [2m🏕️ Base Camp (12%) +47 gold[0m            [32m=^._.^= *perks up*[0m  [1m[████][0m
 ```
 Tamagotchi pet, vibe check, fortune cookie, battle log, cat companion, coffee cup. Your terminal has personality now.
 
 **The Gamer Setup:**
-```
- Lv.3 STR:10 DEX:5 INT:12 WIS:8 CHA:0               ⏱️ 12:30 [A]
- ▁▂▃▄▅▆  🎵 lo-fi beats  $OMC ▲ $4.56          🏆 First Blood
+```ansi
+ [36mLv.3 STR:10 DEX:5 INT:12 WIS:8 CHA:0[0m               [1;32m⏱️ 12:30 [A][0m
+ [32m▁▂▃▄▅▆[0m  [2m🎵 lo-fi beats[0m  [33m$OMC ▲ $4.56[0m          [1;36m🏆 First Blood[0m
 ```
 RPG stats, speedrun timer, token sparkline, soundtrack, stock ticker, achievements. Every session is a run.
 
 **The Minimal Setup:**
-```
- myproject · main · 35% · $4.56
+```ansi
+ [37mmyproject[0m [2m·[0m [32mmain[0m [2m·[0m [37m35%[0m [2m·[0m [2m$4.56[0m
 ```
 Single line. Text only. No bars, no icons, no fuss. The `minimal` theme does this out of the box.
 
@@ -167,9 +168,9 @@ Building blocks for custom themes. Separators, spacing, and raw text.
 
 Two-line layout. No special fonts. Works everywhere.
 
-```
- Opus  myproject  main +2 ~1                          +83 -21  15m 0s
- ▓▓▓▓▓▓▓░░░░░░░░░░░░░ 35%                                      $1.23
+```ansi
+ [1;36mOpus[0m  [37mmyproject[0m  [32mmain[0m [33m+2 ~1[0m                          [2m+83 -21[0m  [2m15m 0s[0m
+ [32m▓▓▓▓▓▓▓░░░░░░░░░░░░░ 35%[0m                                      [2m$1.23[0m
 ```
 
 Line 1: model, directory, git branch, git status (left) / lines changed, session timer (right)
@@ -179,17 +180,17 @@ Line 2: context bar (left) / session cost (right)
 
 Single line. Text only. No bars, no icons, no fuss.
 
-```
- myproject · main +2 ~1                                    35% · $1.23
+```ansi
+ [37mmyproject[0m [2m·[0m [32mmain +2 ~1[0m                                    [37m35%[0m [2m·[0m [2m$1.23[0m
 ```
 
 ### powerline
 
 Two-line layout with Nerd Font icons and arrow separators. Requires a [Nerd Font](https://www.nerdfonts.com/).
 
-```
-  Opus   ~/c/myproject   main +2 ~1              +83 -21   15m 0s
- ███████░░░░░░░░ 35%  84k/200k                    $1.23  NORMAL
+```ansi
+ [1;36m Opus[0m [34m [0m [34m~/c/myproject[0m [34m [0m [32m main[0m [33m+2 ~1[0m       [2m+83 -21[0m [34m [0m [2m 15m 0s[0m
+ [32m███████░░░░░░░░ 35%[0m [34m [0m [2m84k/200k[0m                    [37m$1.23[0m [34m [0m [1;32mNORMAL[0m
 ```
 
 Line 1: model, directory (fish-style), git branch, git status / lines changed, session timer
