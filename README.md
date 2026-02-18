@@ -13,48 +13,70 @@
 npx @npow/oh-my-claude
 ```
 
-Pick a theme, write the config, wire up Claude Code. Restart Claude Code and you're done.
-
-Config lives at `~/.claude/oh-my-claude/config.json` -- pick a theme, toggle segments, set budgets:
-
-```json
-{
-  "theme": "default",
-  "segments": {
-    "session-cost": { "plan": "pro" },
-    "context-bar": { "warnAt": 60, "criticalAt": 80 }
-  }
-}
-```
+Restart Claude Code and you're done.
 
 ---
 
 ## Pick your vibe
 
+**The Fun Setup:**
 ```
  (^.^)  ✨ vibing  🥠 "Weeks of coding can save hours of planning"
  🏕️ Base Camp (12%) +47 gold          =^._.^= *perks up*  [████]
 ```
-Tamagotchi pet, vibe check, fortune cookies, dungeon crawl, cat companion, draining coffee cup.
+<details>
+<summary>config.json</summary>
 
+```json
+{
+  "theme": "default",
+  "lines": [
+    { "left": ["tamagotchi", "vibe-check", "fortune-cookie"], "right": [] },
+    { "left": ["battle-log"], "right": ["cat", "coffee-cup"] }
+  ]
+}
+```
+</details>
+
+**The Gamer Setup:**
 ```
  Lv.3 STR:10 DEX:5 INT:12 WIS:8 CHA:0               ⏱️ 12:30 [A]
  ▁▂▃▄▅▆  🎵 lo-fi beats  $OMC ▲ $4.56          🏆 First Blood
 ```
-RPG stats, speedrun rating, token sparkline, soundtrack, stock ticker, achievements.
+<details>
+<summary>config.json</summary>
 
+```json
+{
+  "theme": "default",
+  "lines": [
+    { "left": ["rpg-stats"], "right": ["speedrun"] },
+    { "left": ["token-sparkline", "soundtrack", "stock-ticker"], "right": ["achievement"] }
+  ]
+}
+```
+</details>
+
+**The Productivity Setup:**
 ```
  Opus  myproject  main +2 ~1                          +83 -21  15m 0s
  ▓▓▓▓▓▓▓░░░░░░░░░░░░░ 35%                                      $4.56
 ```
-Model, git branch, context bar, cost, lines changed, session timer. The essentials.
+This is the default theme -- no config needed.
 
+**The Minimal Setup:**
 ```
  myproject · main · 35% · $4.56
 ```
-Or just one line. Your call.
+<details>
+<summary>config.json</summary>
 
-> All examples are color-coded in your actual terminal -- green/yellow/red context bars, cyan model names, dim secondary info. Plain text here doesn't do it justice.
+```json
+{ "theme": "minimal" }
+```
+</details>
+
+> All examples are color-coded in your actual terminal -- green/yellow/red context bars, cyan model names, dim secondary info.
 
 ---
 
