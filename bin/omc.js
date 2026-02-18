@@ -2,7 +2,7 @@
 
 // bin/omc.js — oh-my-claude CLI
 // Usage: npx oh-my-claude [command]
-// Commands: install, themes, uninstall, list, validate, create
+// Commands: install, theme, themes, uninstall, list, validate, create
 
 import { readFileSync, writeFileSync, mkdirSync, cpSync, existsSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
@@ -350,6 +350,92 @@ export function render(data, config) {
   log(`  3. Restart Claude Code to see your segment.\n`);
 }
 
+// ─── Set Theme ──────────────────────────────────
+
+async function setTheme(name) {
+  // Resolve "omc theme set <name>" → skip the "set" keyword
+  if (name === 'set' || name === 'use') {
+    name = process.argv[4];
+  }
+
+  if (!name) {
+    warn('Usage: omc theme <name>');
+    log(`\nRun ${C.cyan}omc themes${C.reset} to see available themes.\n`);
+    process.exit(1);
+  }
+
+  // Sync themes from package to install dir so new themes are available
+  const installedThemesDir = join(OMC_DIR, 'themes');
+  if (existsSync(installedThemesDir)) {
+    const packageThemes = readdirSync(join(PACKAGE_ROOT, 'themes')).filter(f => f.endsWith('.json'));
+    for (const file of packageThemes) {
+      const dest = join(installedThemesDir, file);
+      if (!existsSync(dest)) {
+        cpSync(join(PACKAGE_ROOT, 'themes', file), dest);
+      }
+    }
+  }
+
+  // Find themes directory
+  const themesDir = existsSync(installedThemesDir) ? installedThemesDir : join(PACKAGE_ROOT, 'themes');
+  const themePath = join(themesDir, `${name}.json`);
+
+  if (!existsSync(themePath)) {
+    warn(`Theme "${name}" not found.`);
+    log(`\nAvailable themes:`);
+    const available = readdirSync(themesDir).filter(f => f.endsWith('.json')).map(f => f.replace('.json', ''));
+    for (const t of available) {
+      log(`  ${C.cyan}${t}${C.reset}`);
+    }
+    log('');
+    process.exit(1);
+  }
+
+  // Read existing config or create new one
+  let config = {};
+  if (existsSync(CONFIG_PATH)) {
+    try {
+      config = JSON.parse(readFileSync(CONFIG_PATH, 'utf8'));
+    } catch {}
+  } else {
+    mkdirSync(dirname(CONFIG_PATH), { recursive: true });
+  }
+
+  const oldTheme = config.theme || 'default';
+  config.theme = name;
+
+  writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2));
+
+  // Load theme description
+  let desc = '';
+  try {
+    const themeData = JSON.parse(readFileSync(themePath, 'utf8'));
+    desc = themeData.description || '';
+  } catch {}
+
+  log('');
+  success(`Theme: ${C.bold}${oldTheme}${C.reset} → ${C.bold}${C.cyan}${name}${C.reset}`);
+  if (desc) log(`  ${C.dim}${desc}${C.reset}`);
+
+  // Show preview
+  const mockData = JSON.stringify({
+    model: { display_name: 'Opus', id: 'claude-opus-4-6' },
+    context_window: { used_percentage: 35, context_window_size: 200000, total_input_tokens: 70000, total_output_tokens: 10000 },
+    cost: { total_cost_usd: 2.45, total_duration_ms: 900000, total_api_duration_ms: 220000, total_lines_added: 83, total_lines_removed: 21 },
+    workspace: { current_dir: process.cwd(), project_dir: process.cwd() },
+    session_id: 'preview', version: '2.1.34',
+  });
+
+  const { execSync } = await import('node:child_process');
+  try {
+    const preview = execSync(`echo '${mockData}' | node ${join(OMC_DIR, 'src', 'runner.js')}`, { encoding: 'utf8' });
+    log(`\n${C.bold}Preview:${C.reset}\n`);
+    log(preview);
+  } catch {}
+
+  log(`${C.dim}Restart Claude Code to apply.${C.reset}\n`);
+}
+
 // ─── Uninstall ───────────────────────────────────
 
 function uninstall() {
@@ -380,8 +466,14 @@ switch (command) {
     install().catch(err => { console.error(err); process.exit(1); });
     break;
   case 'themes':
-  case 'theme':
     listThemes();
+    break;
+  case 'theme':
+    if (process.argv[3]) {
+      setTheme(process.argv[3]).catch(err => { console.error(err); process.exit(1); });
+    } else {
+      listThemes();
+    }
     break;
   case 'list':
   case 'segments':
@@ -404,7 +496,7 @@ switch (command) {
     log(`${C.bold}Usage:${C.reset} omc <command>\n`);
     log(`${C.bold}Commands:${C.reset}`);
     log(`  ${C.cyan}install${C.reset}     Install oh-my-claude (interactive wizard)`);
-    log(`  ${C.cyan}themes${C.reset}      List available themes`);
+    log(`  ${C.cyan}theme${C.reset}       Set theme (omc theme <name>) or list themes`);
     log(`  ${C.cyan}list${C.reset}        List all available segments`);
     log(`  ${C.cyan}create${C.reset}      Create a new plugin segment (omc create <name>)`);
     log(`  ${C.cyan}validate${C.reset}    Run the segment contract validator`);

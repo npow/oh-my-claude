@@ -238,8 +238,9 @@ Full data field reference: [docs/segment-contract.md](docs/segment-contract.md)
 
 ```
 omc install               Interactive setup wizard
-omc create <name>         Scaffold a new plugin segment
+omc theme <name>          Switch theme (e.g. omc theme tamagotchi)
 omc themes                List available themes
+omc create <name>         Scaffold a new plugin segment
 omc list                  List all 41 segments
 omc validate              Check segment contract compliance
 omc uninstall             Remove from Claude Code
