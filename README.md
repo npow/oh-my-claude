@@ -4,10 +4,8 @@
 
 [![npm version](https://img.shields.io/npm/v/@npow/oh-my-claude)](https://www.npmjs.com/package/@npow/oh-my-claude)
 [![CI](https://img.shields.io/github/actions/workflow/status/npow/oh-my-claude/ci.yml?label=CI)](https://github.com/npow/oh-my-claude/actions/workflows/ci.yml)
-[![license](https://img.shields.io/github/license/npow/oh-my-claude)](LICENSE)
+[![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 [![node](https://img.shields.io/node/v/@npow/oh-my-claude)](package.json)
-[![npm downloads](https://img.shields.io/npm/dm/@npow/oh-my-claude)](https://www.npmjs.com/package/@npow/oh-my-claude)
-[![GitHub stars](https://img.shields.io/github/stars/npow/oh-my-claude)](https://github.com/npow/oh-my-claude)
 
 ```bash
 npx @npow/oh-my-claude
