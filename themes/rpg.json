@@ -8,7 +8,7 @@
     },
     {
       "left": ["context-bar"],
-      "right": ["session-cost", "achievement"]
+      "right": ["stock-ticker"]
     },
     {
       "left": ["speedrun", "cat"],
@@ -57,8 +57,8 @@
       "showSign": true,
       "style": "dim italic"
     },
-    "achievement": {
-      "style": "bold cyan"
+    "stock-ticker": {
+      "symbol": "OMC"
     }
   }
 }

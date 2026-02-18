@@ -8,10 +8,10 @@
     },
     {
       "left": ["context-bar"],
-      "right": ["weather-report", "soundtrack", "session-cost"]
+      "right": ["coworker", "session-cost"]
     },
     {
-      "left": ["tamagotchi", "garden", "coffee-cup", "smart-nudge"],
+      "left": ["tamagotchi", "garden", "coffee-cup", "narrator"],
       "right": ["emoji-story"]
     }
   ],
@@ -52,9 +52,8 @@
       "styleWarn": "bold yellow",
       "styleCritical": "bold red"
     },
-    "weather-report": {},
-    "soundtrack": {
-      "showEmoji": true
+    "coworker": {
+      "style": "italic"
     },
     "session-cost": {
       "style": "white",
@@ -65,7 +64,9 @@
     "tamagotchi": {},
     "garden": {},
     "coffee-cup": {},
-    "smart-nudge": {},
+    "narrator": {
+      "style": "dim italic"
+    },
     "emoji-story": {
       "style": ""
     }

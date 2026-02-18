@@ -12,7 +12,7 @@
     },
     {
       "left": ["tamagotchi", "garden", "coffee-cup"],
-      "right": ["vibe-check", "achievement"]
+      "right": ["vibe-check"]
     }
   ],
   "separator": " ",
@@ -65,8 +65,8 @@
     "vibe-check": {
       "showEmoji": true
     },
-    "achievement": {
-      "style": "bold cyan"
+    "streak": {
+      "minDays": 3
     }
   }
 }
