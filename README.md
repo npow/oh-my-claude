@@ -24,7 +24,7 @@ Restart Claude Code and you're done.
 
 ![tamagotchi theme](screenshots/tamagotchi.png)
 
-> `{ "theme": "tamagotchi" }`
+`{ "theme": "tamagotchi" }`
 
 ---
 
@@ -32,7 +32,7 @@ Restart Claude Code and you're done.
 
 ![boss-battle theme](screenshots/boss-battle.png)
 
-> `{ "theme": "boss-battle" }`
+`{ "theme": "boss-battle" }`
 
 ---
 
@@ -40,7 +40,7 @@ Restart Claude Code and you're done.
 
 ![danger-zone theme](screenshots/danger-zone.png)
 
-> `{ "theme": "danger-zone" }`
+`{ "theme": "danger-zone" }`
 
 ---
 
@@ -48,7 +48,7 @@ Restart Claude Code and you're done.
 
 ![rpg theme](screenshots/rpg-developer.png)
 
-> `{ "theme": "rpg" }`
+`{ "theme": "rpg" }`
 
 ---
 
@@ -56,7 +56,7 @@ Restart Claude Code and you're done.
 
 ![coworker theme](screenshots/coworker.png)
 
-> `{ "theme": "coworker" }`
+`{ "theme": "coworker" }`
 
 ---
 
@@ -64,7 +64,7 @@ Restart Claude Code and you're done.
 
 ![narrator theme](screenshots/narrator.png)
 
-> `{ "theme": "narrator" }`
+`{ "theme": "narrator" }`
 
 ---
 
@@ -74,17 +74,7 @@ Restart Claude Code and you're done.
 
 ---
 
-### `minimal` -- single line, text only
-
-```
- myproject · main · 35% · $4.56
-```
-
-> `{ "theme": "minimal" }`
-
----
-
-> Run `npm run showcase` to see all themes live in your terminal.
+Run `npm run showcase` to see all themes live in your terminal.
 
 ---
 
