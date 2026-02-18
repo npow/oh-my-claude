@@ -9,7 +9,7 @@ import { homedir } from 'node:os';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PACKAGE_ROOT = join(__dirname, '..');
 const THEMES_DIR = join(PACKAGE_ROOT, 'themes');
-const DEFAULT_USER_CONFIG_PATH = join(homedir(), '.claude', 'oh-my-claude', 'config.json');
+const DEFAULT_USER_CONFIG_PATH = process.env.OMC_CONFIG || join(homedir(), '.claude', 'oh-my-claude', 'config.json');
 
 /**
  * Deep merge source into target (mutates target).
@@ -136,10 +136,18 @@ export function loadConfig(userConfigPath) {
     config = deepMerge(config, themeConfig);
   }
 
-  // Merge user per-segment overrides
-  if (userConfig && userConfig.segments) {
-    if (!config.segments) config.segments = {};
-    config.segments = deepMerge(config.segments, userConfig.segments);
+  // Merge user overrides: lines, separator, and per-segment config
+  if (userConfig) {
+    if (Array.isArray(userConfig.lines)) {
+      config.lines = userConfig.lines;
+    }
+    if (userConfig.separator != null) {
+      config.separator = userConfig.separator;
+    }
+    if (userConfig.segments) {
+      if (!config.segments) config.segments = {};
+      config.segments = deepMerge(config.segments, userConfig.segments);
+    }
   }
 
   return config;

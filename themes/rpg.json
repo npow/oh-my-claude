@@ -1,0 +1,64 @@
+{
+  "name": "rpg",
+  "description": "D&D character sheet: RPG stats, speedrun timer, cat companion, and horoscope.",
+  "lines": [
+    {
+      "left": ["model-name", "directory", "git-branch"],
+      "right": ["rpg-stats"]
+    },
+    {
+      "left": ["context-bar"],
+      "right": ["session-cost", "achievement"]
+    },
+    {
+      "left": ["speedrun", "cat"],
+      "right": ["horoscope"]
+    }
+  ],
+  "separator": " ",
+  "segments": {
+    "model-name": {
+      "style": "bold cyan",
+      "icon": true
+    },
+    "directory": {
+      "style": "blue",
+      "format": "basename"
+    },
+    "git-branch": {
+      "style": "green",
+      "icon": false,
+      "maxLength": 25
+    },
+    "context-bar": {
+      "width": 15,
+      "charFilled": "\u2588",
+      "charEmpty": "\u2591",
+      "warnAt": 60,
+      "criticalAt": 80,
+      "showPercent": true,
+      "styleOk": "green",
+      "styleWarn": "bold yellow",
+      "styleCritical": "bold red"
+    },
+    "session-cost": {
+      "style": "dim",
+      "format": "$"
+    },
+    "rpg-stats": {
+      "showLevel": true,
+      "style": "cyan"
+    },
+    "speedrun": {
+      "showRating": true
+    },
+    "cat": {},
+    "horoscope": {
+      "showSign": true,
+      "style": "dim italic"
+    },
+    "achievement": {
+      "style": "bold cyan"
+    }
+  }
+}

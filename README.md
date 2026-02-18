@@ -20,52 +20,61 @@ Restart Claude Code and you're done.
 
 ## Pick your vibe
 
-**The Fun Setup:**
-```
- (^.^)  ✨ vibing  🥠 "Weeks of coding can save hours of planning"
- 🏕️ Base Camp (12%) +47 gold          =^._.^= *perks up*  [████]
-```
-<details>
-<summary>config.json</summary>
+**The Danger Zone** -- 3 hours in, $18, tamagotchi dead, garden wilted, coffee empty:
+
+![danger-zone theme](screenshots/danger-zone.png)
 
 ```json
-{
-  "theme": "default",
-  "lines": [
-    { "left": ["tamagotchi", "vibe-check", "fortune-cookie"], "right": [] },
-    { "left": ["battle-log"], "right": ["cat", "coffee-cup"] }
-  ]
-}
+{ "theme": "danger-zone" }
 ```
-</details>
 
-**The Gamer Setup:**
-```
- Lv.3 STR:10 DEX:5 INT:12 WIS:8 CHA:0               ⏱️ 12:30 [A]
- ▁▂▃▄▅▆  🎵 lo-fi beats  $OMC ▲ $4.56          🏆 First Blood
-```
-<details>
-<summary>config.json</summary>
+**The Tamagotchi Terminal** -- virtual pet, growing garden, draining coffee:
+
+![tamagotchi theme](screenshots/tamagotchi.png)
 
 ```json
-{
-  "theme": "default",
-  "lines": [
-    { "left": ["rpg-stats"], "right": ["speedrun"] },
-    { "left": ["token-sparkline", "soundtrack", "stock-ticker"], "right": ["achievement"] }
-  ]
-}
+{ "theme": "tamagotchi" }
 ```
-</details>
 
-**The Productivity Setup:**
-```
- Opus  myproject  main +2 ~1                          +83 -21  15m 0s
- ▓▓▓▓▓▓▓░░░░░░░░░░░░░ 35%                                      $4.56
-```
-This is the default theme -- no config needed.
+**Boss Battle Mode** -- when your refactor hits 85% context:
 
-**The Minimal Setup:**
+![boss-battle theme](screenshots/boss-battle.png)
+
+```json
+{ "theme": "boss-battle" }
+```
+
+**The RPG Developer** -- D&D stats, speedrun timer, cat companion:
+
+![rpg theme](screenshots/rpg-developer.png)
+
+```json
+{ "theme": "rpg" }
+```
+
+**The Coworker** -- fake Slack messages and fortune cookie wisdom:
+
+![coworker theme](screenshots/coworker.png)
+
+```json
+{ "theme": "coworker" }
+```
+
+**The Narrator** -- third-person text adventure with vibes:
+
+![narrator theme](screenshots/narrator.png)
+
+```json
+{ "theme": "narrator" }
+```
+
+**The Productivity Setup** -- clean and informative, no config needed:
+
+![default theme](screenshots/fresh-start.png)
+
+This is the default theme.
+
+**The Minimal Setup** -- single line, text only:
 ```
  myproject · main · 35% · $4.56
 ```
@@ -77,7 +86,7 @@ This is the default theme -- no config needed.
 ```
 </details>
 
-> All examples are color-coded in your actual terminal -- green/yellow/red context bars, cyan model names, dim secondary info.
+> Run `npm run showcase` to see all themes live in your terminal.
 
 ---
 
@@ -96,7 +105,7 @@ This is the default theme -- no config needed.
 | `garden` | ASCII plants grow as you code | `(.)` seed to `(🌳)` at 500 lines |
 | `coffee-cup` | Drains over a 2-hour session | `[████]` full to `[    ] refill?` |
 | `horoscope` | Daily coding horoscope | `Mercury is in retrograde. Avoid force-pushing.` |
-| `coworker` | Fake Slack reactions | `@bot: 'ship it already'` |
+| `coworker` | Fake Slack reactions | `@chad: 'ship it already'` |
 | `commit-msg` | Suggested commit message | `git commit -m "feat: rewrite the entire codebase"` |
 | `weather-report` | Session as weather forecast | `Clear Skies`, `Stormy` at 85% context |
 
@@ -105,10 +114,10 @@ This is the default theme -- no config needed.
 | Segment | What it does | Example |
 |---------|--------------|---------|
 | `achievement` | Unlockable badges | `Centurion` at 100 lines, `Whale` at $20 |
-| `rpg-stats` | D&D character sheet | `Lv.3 STR:10 DEX:5 INT:12 WIS:8 CHA:0` |
-| `speedrun` | Timer + efficiency rating | `12:30 [A]` |
-| `streak` | Consecutive-day streak | `🔥 5d streak` |
-| `battle-log` | Session as dungeon crawl | `Deep Dungeon (65%) +47 gold` |
+| `rpg-stats` | D&D character sheet | `Lv.9 STR:18 DEX:4 INT:11 WIS:18 CHA:0` |
+| `speedrun` | Timer + efficiency rating | `47:00 [C]` |
+| `streak` | Consecutive-day streak | `🔥 7d streak` |
+| `battle-log` | Session as dungeon crawl | `Boss Battle (85%) +892 gold` |
 | `stock-ticker` | Cost as stock price | `$OMC ▲▲ $4.56` |
 | `emoji-story` | Growing emoji narrative | `📝✏️🏗️💰⏳` |
 
@@ -116,19 +125,19 @@ This is the default theme -- no config needed.
 
 | Segment | What it shows | Example |
 |---------|---------------|---------|
-| `context-bar` | Visual context progress bar | `▓▓▓▓▓▓▓░░░░░░░░░░░░░ 35%` |
-| `context-percent` | Context usage as number | `35%` |
+| `context-bar` | Visual context progress bar | `██████░░░░░░░░░ 38%` |
+| `context-percent` | Context usage as number | `38%` |
 | `context-tokens` | Token count used/total | `84k/200k` |
-| `session-cost` | Session cost in USD | `$4.56` |
+| `session-cost` | Session cost in USD | `$2.41` |
 | `cost-budget` | Cost vs budget | `$3.50/$10.00` |
 | `git-branch` | Current branch | `main` |
 | `git-status` | Staged, modified, untracked | `+2 ~1 ?3` |
-| `lines-changed` | Lines added/removed | `+83 -21` |
+| `lines-changed` | Lines added/removed | `+250 -23` |
 | `smart-nudge` | Contextual suggestions | `💡 /compact` at 75%, `💡 commit?` at 100 lines |
 | `token-sparkline` | Context history sparkline | `▁▂▃▄▅▆▇█` |
 | `model-name` | Current model | `Opus` |
 | `directory` | Working directory | `myproject` |
-| `session-timer` | Session duration | `15m 0s` |
+| `session-timer` | Session duration | `25m 0s` |
 | `api-timer` | API wait time | `api 3m 40s` |
 | `vim-mode` | Vim mode indicator | `NORMAL` |
 | `version` | Claude Code version | `v2.1.34` |
@@ -149,33 +158,48 @@ This is the default theme -- no config needed.
 ## Context bar changes color as it fills
 
 ```diff
-  ▓▓▓▓▓▓░░░░░░░░░░░░░░ 30%     ← green, you're fine
-! ▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░ 60%     ← yellow, heads up
-- ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░ 80%     ← red, time to /compact
+  ██████░░░░░░░░░ 30%     ← green, you're fine
+! █████████░░░░░░ 60%     ← yellow, heads up
+- ████████████░░░ 80%     ← red, time to /compact
 ```
 
 Cost tracking auto-detects your plan (Pro/Max) and warns at the right thresholds.
 
 ---
 
-## 3 themes
+## 9 themes
+
+### Built-in layouts
 
 **default** -- two lines, works everywhere:
 ```
- Opus  myproject  main +2 ~1                          +83 -21  15m 0s
- ▓▓▓▓▓▓▓░░░░░░░░░░░░░ 35%                                      $1.23
+ Opus myproject main +2 ~1                                    +83 -21 15m 0s
+ ▓▓▓▓▓▓▓░░░░░░░░░░░░░ 35%                                         $1.23
 ```
 
 **minimal** -- single line, text only:
 ```
- myproject · main +2 ~1                                    35% · $1.23
+ myproject · main +2 ~1                                       35% · $1.23
 ```
 
 **powerline** -- Nerd Font icons and arrows:
 ```
-  Opus    ~/c/myproject    main  +2 ~1         +83 -21    15m 0s
- ███████░░░░░░░░ 35%   84k/200k                    $1.23   NORMAL
+ 󰧩 Opus  ~/c/myproject  main +2 ~1                    +83 -21  15m 0s
+ ███████░░░░░░░░ 35% 84k/200k                           $1.23 NORMAL
 ```
+
+### Personality themes
+
+| Theme | Vibe |
+|-------|------|
+| **tamagotchi** | Pet, garden, coffee, vibes |
+| **boss-battle** | Dungeon crawl, weather, soundtrack |
+| **rpg** | D&D stats, speedrun, cat, horoscope |
+| **coworker** | Fake Slack messages, fortune cookies |
+| **danger-zone** | Everything on fire |
+| **narrator** | Third-person text adventure |
+
+See [screenshots above](#pick-your-vibe) for each theme in action.
 
 ---
 
