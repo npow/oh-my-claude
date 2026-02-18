@@ -30,7 +30,7 @@ Context filling up? The bar changes color so you know before you hit the wall:
 ## Install
 
 ```bash
-npx oh-my-claude
+npx @npow/oh-my-claude
 ```
 
 That's it. Picks a theme, writes the config, wires up Claude Code. Restart Claude Code and you're done.
