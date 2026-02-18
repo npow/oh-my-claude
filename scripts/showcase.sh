@@ -38,31 +38,31 @@ run_showcase() {
 TARGET="${1:-all}"
 
 if [ "$TARGET" = "all" ] || [ "$TARGET" = "tamagotchi" ]; then
-  run_showcase "tamagotchi" "showcase-tamagotchi.json" "The Tamagotchi Terminal"
+  run_showcase "tamagotchi" "showcase-tamagotchi.json" "tamagotchi"
 fi
 
 if [ "$TARGET" = "all" ] || [ "$TARGET" = "boss-battle" ]; then
-  run_showcase "boss-battle" "showcase-boss-battle.json" "Boss Battle Mode"
-fi
-
-if [ "$TARGET" = "all" ] || [ "$TARGET" = "rpg" ]; then
-  run_showcase "rpg" "showcase-rpg.json" "The RPG Developer"
-fi
-
-if [ "$TARGET" = "all" ] || [ "$TARGET" = "coworker" ]; then
-  run_showcase "coworker" "showcase-coworker.json" "The Coworker"
+  run_showcase "boss-battle" "showcase-boss-battle.json" "boss-battle"
 fi
 
 if [ "$TARGET" = "all" ] || [ "$TARGET" = "danger-zone" ]; then
-  run_showcase "danger-zone" "showcase-danger-zone.json" "The Danger Zone"
+  run_showcase "danger-zone" "showcase-danger-zone.json" "danger-zone"
 fi
 
-if [ "$TARGET" = "all" ] || [ "$TARGET" = "fresh" ]; then
-  run_showcase "default" "showcase-fresh.json" "Fresh Start"
+if [ "$TARGET" = "all" ] || [ "$TARGET" = "rpg" ]; then
+  run_showcase "rpg" "showcase-rpg.json" "rpg"
+fi
+
+if [ "$TARGET" = "all" ] || [ "$TARGET" = "coworker" ]; then
+  run_showcase "coworker" "showcase-coworker.json" "coworker"
 fi
 
 if [ "$TARGET" = "all" ] || [ "$TARGET" = "narrator" ]; then
-  run_showcase "narrator" "showcase-narrator.json" "The Narrator"
+  run_showcase "narrator" "showcase-narrator.json" "narrator"
+fi
+
+if [ "$TARGET" = "all" ] || [ "$TARGET" = "fresh" ]; then
+  run_showcase "default" "showcase-fresh.json" "default"
 fi
 
 # Clean up

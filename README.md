@@ -20,71 +20,69 @@ Restart Claude Code and you're done.
 
 ## Pick your vibe
 
-**The Danger Zone** -- 3 hours in, $18, tamagotchi dead, garden wilted, coffee empty:
-
-![danger-zone theme](screenshots/danger-zone.png)
-
-```json
-{ "theme": "danger-zone" }
-```
-
-**The Tamagotchi Terminal** -- virtual pet, growing garden, draining coffee:
+### `tamagotchi` -- virtual pet, growing garden, draining coffee
 
 ![tamagotchi theme](screenshots/tamagotchi.png)
 
-```json
-{ "theme": "tamagotchi" }
-```
+> `{ "theme": "tamagotchi" }`
 
-**Boss Battle Mode** -- when your refactor hits 85% context:
+---
+
+### `boss-battle` -- dungeon crawl with weather and battle music
 
 ![boss-battle theme](screenshots/boss-battle.png)
 
-```json
-{ "theme": "boss-battle" }
-```
+> `{ "theme": "boss-battle" }`
 
-**The RPG Developer** -- D&D stats, speedrun timer, cat companion:
+---
+
+### `danger-zone` -- 3 hours in, $18 spent, everything on fire
+
+![danger-zone theme](screenshots/danger-zone.png)
+
+> `{ "theme": "danger-zone" }`
+
+---
+
+### `rpg` -- D&D character sheet, speedrun timer, cat companion
 
 ![rpg theme](screenshots/rpg-developer.png)
 
-```json
-{ "theme": "rpg" }
-```
+> `{ "theme": "rpg" }`
 
-**The Coworker** -- fake Slack messages and fortune cookie wisdom:
+---
+
+### `coworker` -- fake Slack messages and fortune cookie wisdom
 
 ![coworker theme](screenshots/coworker.png)
 
-```json
-{ "theme": "coworker" }
-```
+> `{ "theme": "coworker" }`
 
-**The Narrator** -- third-person text adventure with vibes:
+---
+
+### `narrator` -- third-person text adventure with vibes
 
 ![narrator theme](screenshots/narrator.png)
 
-```json
-{ "theme": "narrator" }
-```
+> `{ "theme": "narrator" }`
 
-**The Productivity Setup** -- clean and informative, no config needed:
+---
+
+### `default` -- clean and informative, no config needed
 
 ![default theme](screenshots/fresh-start.png)
 
-This is the default theme.
+---
 
-**The Minimal Setup** -- single line, text only:
+### `minimal` -- single line, text only
+
 ```
  myproject · main · 35% · $4.56
 ```
-<details>
-<summary>config.json</summary>
 
-```json
-{ "theme": "minimal" }
-```
-</details>
+> `{ "theme": "minimal" }`
+
+---
 
 > Run `npm run showcase` to see all themes live in your terminal.
 
