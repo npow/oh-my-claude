@@ -10,7 +10,8 @@
 ## Install
 
 ```bash
-npx @npow/oh-my-claude
+npm install -g @npow/oh-my-claude
+omc install
 ```
 
 Restart Claude Code and you're done.
@@ -212,7 +213,7 @@ Full data field reference: [docs/segment-contract.md](docs/segment-contract.md)
 ## CLI
 
 ```
-npx @npow/oh-my-claude   Install (interactive wizard)
+omc install               Interactive setup wizard
 omc create <name>         Scaffold a new plugin segment
 omc themes                List available themes
 omc list                  List all 41 segments
