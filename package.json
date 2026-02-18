@@ -22,6 +22,10 @@
     "developer-tools",
     "oh-my-zsh"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/npow/oh-my-claude"
+  },
   "author": "",
   "license": "MIT",
   "engines": {
