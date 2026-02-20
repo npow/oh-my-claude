@@ -1,6 +1,6 @@
 {
   "name": "@npow/oh-my-claude",
-  "version": "0.2.0",
+  "version": "0.3.1",
   "description": "The framework for Claude Code statuslines. 40+ plugins. Themes.",
   "type": "module",
   "bin": {
