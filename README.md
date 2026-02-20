@@ -238,8 +238,8 @@ Three ways:
 **1. Install from git:**
 
 ```bash
-omc install https://github.com/npow/omc-plugin-weather
-omc add weather
+omc install https://github.com/npow/omc-plugins
+omc add spotify
 ```
 
 **2. Create with the CLI:**
