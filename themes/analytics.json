@@ -1,0 +1,76 @@
+{
+  "name": "analytics",
+  "description": "Metrics dashboard. Cost rate, token efficiency, context ETA, and git details.",
+  "lines": [
+    {
+      "left": ["model-name", "directory", "git-branch", "git-ahead-behind"],
+      "right": ["lines-changed", "efficiency-score", "session-timer"]
+    },
+    {
+      "left": ["context-bar", "context-remaining", "context-eta"],
+      "right": ["cost-rate", "session-cost"]
+    }
+  ],
+  "separator": " ",
+  "plugins": {
+    "model-name": {
+      "style": "bold cyan",
+      "icon": false
+    },
+    "directory": {
+      "style": "white",
+      "format": "basename"
+    },
+    "git-branch": {
+      "style": "green",
+      "icon": false,
+      "maxLength": 25
+    },
+    "git-ahead-behind": {
+      "style": "cyan",
+      "hideIfSynced": true
+    },
+    "lines-changed": {
+      "style": "dim",
+      "hideIfZero": true
+    },
+    "efficiency-score": {
+      "style": "dim"
+    },
+    "session-timer": {
+      "style": "dim"
+    },
+    "context-bar": {
+      "width": 15,
+      "charFilled": "\u2593",
+      "charEmpty": "\u2591",
+      "warnAt": 60,
+      "criticalAt": 80,
+      "showPercent": true,
+      "styleOk": "green",
+      "styleWarn": "bold yellow",
+      "styleCritical": "bold red"
+    },
+    "context-remaining": {
+      "style": "dim",
+      "warnAt": 40000,
+      "criticalAt": 20000,
+      "styleWarn": "yellow",
+      "styleCritical": "bold red"
+    },
+    "context-eta": {
+      "style": "dim"
+    },
+    "cost-rate": {
+      "style": "dim",
+      "warnAt": 0.50,
+      "styleWarn": "bold yellow"
+    },
+    "session-cost": {
+      "style": "white",
+      "format": "$",
+      "styleWarn": "bold yellow",
+      "styleCritical": "bold red"
+    }
+  }
+}

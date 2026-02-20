@@ -1,14 +1,14 @@
 {
-  "name": "default",
-  "description": "Clean two-line statusline. No special fonts required. Works everywhere.",
+  "name": "productivity",
+  "description": "Time-aware statusline. Clock, work/break cycle, day progress, break reminders.",
   "lines": [
     {
       "left": ["model-name", "directory", "git-branch", "git-status"],
-      "right": ["git-last-commit", "lines-changed", "session-timer"]
+      "right": ["package-version", "git-last-commit", "clock"]
     },
     {
-      "left": ["context-bar"],
-      "right": ["session-cost"]
+      "left": ["context-bar", "day-progress"],
+      "right": ["work-cycle", "session-cost"]
     }
   ],
   "separator": " ",
@@ -24,24 +24,26 @@
     "git-branch": {
       "style": "green",
       "icon": false,
-      "maxLength": 30
+      "maxLength": 25
     },
     "git-status": {
       "style": "yellow",
       "format": "short"
     },
-    "lines-changed": {
+    "package-version": {
       "style": "dim",
-      "hideIfZero": true
-    },
-    "session-timer": {
-      "style": "dim"
+      "prefix": "v"
     },
     "git-last-commit": {
       "style": "dim"
     },
+    "clock": {
+      "style": "white",
+      "format24": false,
+      "showSeconds": false
+    },
     "context-bar": {
-      "width": 20,
+      "width": 15,
       "charFilled": "\u2593",
       "charEmpty": "\u2591",
       "warnAt": 60,
@@ -51,12 +53,21 @@
       "styleWarn": "bold yellow",
       "styleCritical": "bold red"
     },
+    "day-progress": {
+      "style": "dim",
+      "width": 8,
+      "startHour": 9,
+      "endHour": 17
+    },
+    "work-cycle": {
+      "style": "green",
+      "styleBreak": "bold cyan",
+      "workMins": 25,
+      "breakMins": 5
+    },
     "session-cost": {
       "style": "dim",
-      "format": "$",
-      "plan": null,
-      "styleWarn": "bold yellow",
-      "styleCritical": "bold red"
+      "format": "$"
     }
   }
 }

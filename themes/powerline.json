@@ -3,11 +3,11 @@
   "description": "Full powerline with Nerd Font icons and arrow separators. Requires a Nerd Font.",
   "lines": [
     {
-      "left": ["model-name", "separator-arrow", "directory", "separator-arrow", "git-branch", "git-status"],
+      "left": ["model-name", "separator-arrow", "directory", "separator-arrow", "git-branch", "git-status", "git-ahead-behind"],
       "right": ["lines-changed", "separator-arrow", "session-timer"]
     },
     {
-      "left": ["context-bar", "separator-arrow", "context-tokens"],
+      "left": ["context-bar", "separator-arrow", "context-tokens", "context-remaining"],
       "right": ["session-cost", "separator-arrow", "vim-mode"]
     }
   ],
@@ -53,6 +53,13 @@
     "context-tokens": {
       "style": "dim",
       "format": "short"
+    },
+    "context-remaining": {
+      "style": "dim"
+    },
+    "git-ahead-behind": {
+      "style": "cyan",
+      "hideIfSynced": true
     },
     "session-cost": {
       "style": "white",
