@@ -1,7 +1,7 @@
 // src/compositor.js — Layout engine
 // Zero dependencies. Node 18+ ESM.
 
-import { openSync, closeSync } from 'fs';
+import { openSync } from 'fs';
 import * as tty from 'tty';
 import { stylize, stripAnsi } from './color.js';
 
@@ -36,8 +36,7 @@ function detectWidth() {
     const fd = openSync('/dev/tty', 'r');
     const stream = new tty.ReadStream(fd);
     const cols = stream.columns;
-    stream.destroy();
-    closeSync(fd);
+    stream.destroy(); // also closes the fd
     if (cols > 0) return cols;
   } catch {
     // /dev/tty unavailable (e.g., CI, Docker without TTY)
