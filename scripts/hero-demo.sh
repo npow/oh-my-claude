@@ -22,7 +22,7 @@ render() {
   input_box
   # Indent statusline output to align with > prompt
   cat "$ROOT/tests/fixtures/$fixture" \
-    | OMC_CONFIG=/tmp/omc-showcase-config.json OMC_WIDTH=95 node "$ROOT/src/runner.js" \
+    | OMC_CONFIG=/tmp/omc-showcase-config.json OMC_WIDTH=98 node "$ROOT/src/runner.js" \
     | sed "s/^/${PAD}/"
 }
 
