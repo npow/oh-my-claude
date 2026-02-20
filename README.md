@@ -195,6 +195,14 @@ omc install https://github.com/npow/omc-plugins
 
 They're inactive until you add them. Pick what you need:
 
+### Usage limits
+
+| Plugin | What it shows |
+|--------|--------------|
+| `usage-limits` | `5h 12% ~4h30m \| 7d 30% ~2d16h` — real rate limit percentages with reset countdowns |
+
+This is the one everyone wants. Shows your actual 5-hour and 7-day utilization from the Anthropic API. Color-coded: green → yellow at 60% → red at 85%. Requires Chrome with an active claude.ai session (macOS).
+
 ### Dev environment
 
 | Plugin | What it shows |
