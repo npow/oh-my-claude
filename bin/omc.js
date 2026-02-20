@@ -149,32 +149,93 @@ function extractRepoName(urlOrPath) {
 }
 
 /**
+ * Install a single plugin from a directory into the plugins dir.
+ * Returns the plugin name, or null on failure.
+ */
+function installSinglePlugin(sourceDir, name) {
+  const dest = join(PLUGINS_DIR, name);
+
+  if (existsSync(dest)) {
+    warn(`Plugin "${name}" already exists — skipping`);
+    return null;
+  }
+
+  // Copy the plugin directory
+  cpSync(sourceDir, dest, { recursive: true });
+
+  // Check for valid plugin: plugin.js or executable plugin
+  const hasPluginJs = existsSync(join(dest, 'plugin.js'));
+  const pluginScript = join(dest, 'plugin');
+  let hasPluginScript = false;
+
+  if (existsSync(pluginScript)) {
+    try { chmodSync(pluginScript, 0o755); } catch {}
+    hasPluginScript = true;
+  }
+
+  if (!hasPluginJs && !hasPluginScript) {
+    try { execSync(`rm -rf ${dest}`, { stdio: 'pipe' }); } catch {}
+    return null;
+  }
+
+  // Resolve name from manifest
+  let pluginName = name;
+  let description = '';
+  try {
+    const manifest = JSON.parse(readFileSync(join(dest, 'plugin.json'), 'utf8'));
+    if (manifest.name) pluginName = manifest.name;
+    if (manifest.description) description = manifest.description;
+  } catch {}
+
+  const pluginType = hasPluginJs ? 'JS' : 'script';
+  success(`${C.bold}${pluginName}${C.reset} (${pluginType})${description ? ` — ${C.dim}${description}${C.reset}` : ''}`);
+
+  return pluginName;
+}
+
+/**
+ * Detect monorepo: has subdirectories containing plugin.json files.
+ */
+function detectMonorepo(dir) {
+  const plugins = [];
+  try {
+    for (const entry of readdirSync(dir)) {
+      if (entry.startsWith('.')) continue;
+      const entryPath = join(dir, entry);
+      try {
+        if (!statSync(entryPath).isDirectory()) continue;
+        if (existsSync(join(entryPath, 'plugin.json')) ||
+            existsSync(join(entryPath, 'plugin.js')) ||
+            existsSync(join(entryPath, 'plugin'))) {
+          plugins.push({ name: entry, path: entryPath });
+        }
+      } catch {}
+    }
+  } catch {}
+  return plugins;
+}
+
+/**
  * Install a plugin from a git URL or local path.
+ * Auto-detects monorepos (subdirectories with plugin.json).
  */
 function installPlugin(urlOrPath) {
   if (!urlOrPath) {
     warn('Usage: omc install <git-url-or-path>');
     log(`\n${C.dim}Example: omc install https://github.com/user/omc-plugin-hello${C.reset}`);
-    log(`${C.dim}         omc install /path/to/local/plugin${C.reset}\n`);
-    process.exit(1);
-  }
-
-  const name = extractRepoName(urlOrPath);
-  const dest = join(PLUGINS_DIR, name);
-
-  if (existsSync(dest)) {
-    warn(`Plugin "${name}" already exists at:`);
-    log(`  ${C.dim}${dest}${C.reset}`);
-    log(`\n${C.dim}To reinstall, remove it first: rm -rf ${dest}${C.reset}\n`);
+    log(`${C.dim}         omc install https://github.com/user/omc-plugins${C.reset}\n`);
     process.exit(1);
   }
 
   mkdirSync(PLUGINS_DIR, { recursive: true });
 
-  log(`\n${C.bold}Installing plugin:${C.reset} ${name}\n`);
+  // Clone to a temp directory first
+  const tmpDir = join(PLUGINS_DIR, '.tmp-install-' + Date.now());
+
+  log(`\n${C.bold}Installing from:${C.reset} ${urlOrPath}\n`);
 
   try {
-    execSync(`git clone --depth 1 ${urlOrPath} ${dest}`, {
+    execSync(`git clone --depth 1 ${urlOrPath} ${tmpDir}`, {
       encoding: 'utf8',
       stdio: ['pipe', 'pipe', 'pipe'],
       timeout: 30000,
@@ -184,49 +245,56 @@ function installPlugin(urlOrPath) {
     process.exit(1);
   }
 
-  // Check for valid plugin: plugin.js or executable plugin
-  const hasPluginJs = existsSync(join(dest, 'plugin.js'));
-  const pluginScript = join(dest, 'plugin');
-  let hasPluginScript = false;
+  // Check if it's a single plugin (plugin.js or plugin at root)
+  const isSingle = existsSync(join(tmpDir, 'plugin.js')) || existsSync(join(tmpDir, 'plugin'));
 
-  if (existsSync(pluginScript)) {
-    // Ensure executable bit is set
-    try {
-      chmodSync(pluginScript, 0o755);
-      hasPluginScript = true;
-    } catch {
-      // chmod failed — try to use it anyway
-      hasPluginScript = true;
+  if (isSingle) {
+    const name = extractRepoName(urlOrPath);
+    const pluginName = installSinglePlugin(tmpDir, name);
+
+    // Clean up temp dir (installSinglePlugin copies it)
+    try { execSync(`rm -rf ${tmpDir}`, { stdio: 'pipe' }); } catch {}
+
+    if (!pluginName) {
+      warn('Plugin already exists or is invalid.');
+      process.exit(1);
     }
+
+    log(`\n${C.bold}Next:${C.reset} Run ${C.cyan}omc add ${pluginName}${C.reset} to add it to your statusline.\n`);
+    return;
   }
 
-  if (!hasPluginJs && !hasPluginScript) {
-    warn(`No plugin.js or executable plugin file found in cloned repo.`);
-    log(`${C.dim}Cleaning up ${dest}${C.reset}`);
-    try { execSync(`rm -rf ${dest}`, { stdio: 'pipe' }); } catch {}
+  // Check for monorepo
+  const subPlugins = detectMonorepo(tmpDir);
+
+  if (subPlugins.length === 0) {
+    warn('No plugins found in cloned repo.');
+    log(`${C.dim}Expected: plugin.js or plugin at root, or subdirectories with plugin.json${C.reset}`);
+    try { execSync(`rm -rf ${tmpDir}`, { stdio: 'pipe' }); } catch {}
     process.exit(1);
   }
 
-  const pluginType = hasPluginJs ? 'JS (plugin.js)' : 'Script (plugin)';
+  log(`  Found ${C.bold}${subPlugins.length}${C.reset} plugins:\n`);
 
-  success(`Installed ${C.bold}${name}${C.reset} → ${dest}`);
-  log(`  ${C.dim}Type: ${pluginType}${C.reset}`);
+  const installed = [];
+  for (const { name, path: srcPath } of subPlugins) {
+    const pluginName = installSinglePlugin(srcPath, name);
+    if (pluginName) installed.push(pluginName);
+  }
 
-  // Show plugin.json info if present
-  try {
-    const manifest = JSON.parse(readFileSync(join(dest, 'plugin.json'), 'utf8'));
-    if (manifest.description) log(`  ${C.dim}${manifest.description}${C.reset}`);
-  } catch {}
+  // Clean up temp dir
+  try { execSync(`rm -rf ${tmpDir}`, { stdio: 'pipe' }); } catch {}
 
-  // Resolve the plugin name from manifest if available
-  let pluginName = name;
-  try {
-    const manifest = JSON.parse(readFileSync(join(dest, 'plugin.json'), 'utf8'));
-    if (manifest.name) pluginName = manifest.name;
-  } catch {}
-
-  log(`\n${C.bold}Next:${C.reset} Run ${C.cyan}omc add ${pluginName}${C.reset} to add it to your statusline.`);
-  log(`${C.dim}  Options: omc add ${pluginName} --line 2 --left${C.reset}\n`);
+  if (installed.length === 0) {
+    warn('No new plugins installed (all may already exist).');
+  } else {
+    log(`\n${C.bold}Installed ${installed.length} plugin(s).${C.reset}`);
+    log(`\n${C.bold}Next:${C.reset} Add the ones you want:`);
+    for (const name of installed) {
+      log(`  ${C.cyan}omc add ${name}${C.reset}`);
+    }
+  }
+  log('');
 }
 
 // ─── Add / Remove Plugin from Statusline ─────────

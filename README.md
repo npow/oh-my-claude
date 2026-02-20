@@ -187,21 +187,47 @@ See [screenshots](#screenshots) for each theme in action.
 
 ## External plugins
 
-Plugins that need APIs, platform-specific tools, or non-Node dependencies live in separate repos. Install with `omc install <url>`, then `omc add <name>`.
-
-| Plugin | What it does | Platform |
-|--------|-------------|----------|
-| [spotify](https://github.com/npow/omc-plugin-spotify) | `♫ Daft Punk — Get Lucky` | macOS, Linux |
-| [battery](https://github.com/npow/omc-plugin-battery) | `🔋 85%` / `⚡ 43%` charging | macOS, Linux |
-| [github-pr](https://github.com/npow/omc-plugin-github-pr) | `PR #42 ✓ approved` | requires `gh` CLI |
-| [cpu](https://github.com/npow/omc-plugin-cpu) | `cpu 12%` with color thresholds | macOS, Linux |
-| [hackernews](https://github.com/npow/omc-plugin-hackernews) | `▲847 Show HN: ...` top headline | any |
-| [weather](https://github.com/npow/omc-plugin-weather) | `⛅ 72°F` current conditions | any |
+The [omc-plugins](https://github.com/npow/omc-plugins) collection has 12 plugins that need external tools or APIs. One command installs all of them:
 
 ```bash
-omc install https://github.com/npow/omc-plugin-spotify
-omc add spotify
+omc install https://github.com/npow/omc-plugins
 ```
+
+They're inactive until you add them. Pick what you need:
+
+### Dev environment
+
+| Plugin | What it shows |
+|--------|--------------|
+| `localhost` | `● :3000` green / `○ :3000` red — is your dev server up? |
+| `ci-status` | `✓ CI` / `✗ CI` — did your last push pass? (requires `gh`) |
+| `process-watcher` | `● vite ● jest` — are your dev tools running? |
+| `log-tail` | Last error line from a configurable log file |
+| `session-diff` | `3f uncommitted +120 -45` — nudge to commit |
+
+### GitHub
+
+| Plugin | What it shows |
+|--------|--------------|
+| `github-pr` | `PR #42 ✓ approved` — your branch's PR status (requires `gh`) |
+| `pr-reviews` | `3 reviews` — PRs waiting for your review (requires `gh`) |
+
+### System & fun
+
+| Plugin | What it shows |
+|--------|--------------|
+| `spotify` | `♫ Daft Punk — Get Lucky` (macOS / Linux) |
+| `cpu` | `cpu 12%` with color thresholds |
+| `battery` | `🔋 85%` / `⚡ charging` |
+| `weather` | `⛅ 72°F` current conditions |
+| `hackernews` | `▲847 Show HN: ...` top headline |
+
+```bash
+omc add localhost
+omc config localhost port=8080
+```
+
+Community plugins can also be installed individually from any git repo — see [Add a plugin](#add-a-plugin).
 
 ---
 
