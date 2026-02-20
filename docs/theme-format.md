@@ -1,6 +1,6 @@
 # Theme Format
 
-Themes are JSON files in the `themes/` directory. They control which segments appear, their order, their layout (left vs right), and per-segment configuration overrides.
+Themes are JSON files in the `themes/` directory. They control which plugins appear, their order, their layout (left vs right), and per-plugin configuration overrides.
 
 ## Schema
 
@@ -15,7 +15,7 @@ Themes are JSON files in the `themes/` directory. They control which segments ap
     }
   ],
   "separator": " ",
-  "segments": {
+  "plugins": {
     "context": {
       "warnAt": 80,
       "criticalAt": 95
@@ -45,36 +45,36 @@ Each line object has:
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `left` | `string[]` | yes | Segment names rendered on the left side, in order. |
-| `right` | `string[]` | yes | Segment names rendered on the right side, in order. |
+| `left` | `string[]` | yes | Plugin names rendered on the left side, in order. |
+| `right` | `string[]` | yes | Plugin names rendered on the right side, in order. |
 
-Segments are rendered in array order. Left segments flow left-to-right. Right segments flow left-to-right but are right-aligned as a group.
+Plugins are rendered in array order. Left plugins flow left-to-right. Right plugins flow left-to-right but are right-aligned as a group.
 
-If a segment returns `null`, it is removed from the line and the remaining segments close the gap. This means segments can conditionally appear without leaving blank spaces.
+If a plugin returns `null`, it is removed from the line and the remaining plugins close the gap. This means plugins can conditionally appear without leaving blank spaces.
 
 ### `separator` (string, optional)
 
-The string placed between adjacent segments on the same side. Defaults to `" "` (single space).
+The string placed between adjacent plugins on the same side. Defaults to `" "` (single space).
 
 Examples:
-- `" "` -- space between segments
+- `" "` -- space between plugins
 - `" | "` -- pipe separator
 - `" // "` -- double slash
 - `" \u2502 "` -- Unicode box-drawing character
 
-The separator is only placed between visible segments. If a segment is hidden (returns null), no extra separator appears.
+The separator is only placed between visible plugins. If a plugin is hidden (returns null), no extra separator appears.
 
-### `segments` (object, optional)
+### `plugins` (object, optional)
 
-Per-segment configuration overrides. Keys are segment names, values are config objects passed to the segment's `render()` function.
+Per-plugin configuration overrides. Keys are plugin names, values are config objects passed to the plugin's `render()` function.
 
-These overrides sit between the segment's `meta.defaultConfig` and the user's `config.json` overrides in the resolution order:
+These overrides sit between the plugin's `meta.defaultConfig` and the user's `config.json` overrides in the resolution order:
 
 ```
-meta.defaultConfig  <  theme.segments  <  user config.segments
+meta.defaultConfig  <  theme.plugins  <  user config.plugins
 ```
 
-Only include config for segments that need non-default values. Segments not listed here receive their defaults.
+Only include config for plugins that need non-default values. Plugins not listed here receive their defaults.
 
 ## Theme Resolution
 
@@ -82,16 +82,16 @@ When the framework starts:
 
 1. Load `themes/default.json` as the base.
 2. If the user's config specifies a different theme (`"theme": "minimal"`), load `themes/minimal.json` and use it instead of the default. The default is NOT merged -- the named theme fully replaces it.
-3. The user's `~/.claude/oh-my-claude/config.json` can override individual segment configs on top of whichever theme is active.
+3. The user's `~/.claude/oh-my-claude/config.json` can override individual plugin configs on top of whichever theme is active.
 
-## Referencing Segments
+## Referencing Plugins
 
-Segment names in `left` and `right` arrays can reference:
+Plugin names in `left` and `right` arrays can reference:
 
-- **Built-in segments**: Any file in `src/segments/` by its `meta.name` (e.g., `"model"`, `"context"`, `"cost"`).
+- **Built-in plugins**: Any file in `src/plugins/` by its `meta.name` (e.g., `"model"`, `"context"`, `"cost"`).
 - **External plugins**: Any plugin in `~/.claude/oh-my-claude/plugins/<name>/` by its directory name (e.g., `"my-plugin"`).
 
-If a referenced segment does not exist, the framework silently skips it (same as if it returned null).
+If a referenced plugin does not exist, the framework silently skips it (same as if it returned null).
 
 ## Example: Single-Line Theme
 
@@ -131,7 +131,7 @@ Opus                                                           $1.23
     }
   ],
   "separator": " | ",
-  "segments": {
+  "plugins": {
     "context": { "warnAt": 70 },
     "cost": { "precision": 3 }
   }

@@ -1,14 +1,15 @@
 // src/plugins.js — Plugin discovery and loading
 // Zero dependencies. Node 18+ ESM.
 //
-// Scans ~/.claude/oh-my-claude/plugins/<name>/segment.js for user-defined segments.
+// Scans ~/.claude/oh-my-claude/plugins/<name>/plugin.js for user-defined plugins.
 // Each plugin must export `meta` (object with `name` string) and `render` (function).
 // Bad or missing plugins are silently skipped — never crash the statusline.
 
-import { readdirSync, statSync } from 'node:fs';
+import { readdirSync, statSync, accessSync, readFileSync, constants } from 'node:fs';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 import { pathToFileURL } from 'node:url';
+import { cachedExecPlugin } from './cache.js';
 
 const PLUGINS_DIR = join(homedir(), '.claude', 'oh-my-claude', 'plugins');
 
@@ -30,30 +31,41 @@ export async function discoverPlugins() {
     return plugins;
   }
 
-  // 2. For each entry, check if it's a directory with a segment.js
+  // 2. For each entry, check if it's a directory with a plugin.js or executable plugin
   for (const entry of entries) {
     try {
       const entryPath = join(PLUGINS_DIR, entry);
       const stat = statSync(entryPath);
       if (!stat.isDirectory()) continue;
 
-      const segmentPath = join(entryPath, 'segment.js');
+      // Try plugin.js first (in-process, fast)
+      const pluginJsPath = join(entryPath, 'plugin.js');
+      let loaded = false;
 
-      // Verify segment.js exists before attempting import
       try {
-        statSync(segmentPath);
+        statSync(pluginJsPath);
+        const mod = await import(pathToFileURL(pluginJsPath).href);
+        if (mod.meta && typeof mod.meta.name === 'string' && mod.meta.name && typeof mod.render === 'function') {
+          plugins[mod.meta.name] = mod;
+          loaded = true;
+        }
       } catch {
-        continue;
+        // plugin.js not found or invalid — try script fallback
       }
 
-      // 3. Dynamic import — use file:// URL for cross-platform ESM compatibility
-      const mod = await import(pathToFileURL(segmentPath).href);
+      if (loaded) continue;
 
-      // 4. Validate exports: must have meta.name (string) and render (function)
-      if (!mod.meta || typeof mod.meta.name !== 'string' || !mod.meta.name) continue;
-      if (typeof mod.render !== 'function') continue;
+      // Fallback: check for executable `plugin` file (script plugin)
+      const scriptPath = join(entryPath, 'plugin');
+      try {
+        accessSync(scriptPath, constants.X_OK);
+      } catch {
+        continue; // Not executable or doesn't exist
+      }
 
-      plugins[mod.meta.name] = mod;
+      const manifest = loadManifest(entryPath, entry);
+      const wrapped = wrapScriptPlugin(scriptPath, manifest);
+      plugins[manifest.name] = wrapped;
     } catch {
       // Bad plugin — skip silently, never crash the statusline
       continue;
@@ -61,6 +73,57 @@ export async function discoverPlugins() {
   }
 
   return plugins;
+}
+
+/**
+ * Load plugin.json manifest from a plugin directory, or return defaults.
+ *
+ * @param {string} pluginDir - Absolute path to plugin directory
+ * @param {string} dirName - Directory name (used as fallback plugin name)
+ * @returns {{ name: string, description: string, cacheTtl: number, defaultConfig: object }}
+ */
+function loadManifest(pluginDir, dirName) {
+  const defaults = {
+    name: dirName,
+    description: '',
+    cacheTtl: 5000,
+    defaultConfig: {},
+  };
+
+  try {
+    const raw = readFileSync(join(pluginDir, 'plugin.json'), 'utf8');
+    const manifest = JSON.parse(raw);
+    return {
+      name: (typeof manifest.name === 'string' && manifest.name) || defaults.name,
+      description: manifest.description || defaults.description,
+      cacheTtl: typeof manifest.cacheTtl === 'number' ? manifest.cacheTtl : defaults.cacheTtl,
+      defaultConfig: manifest.defaultConfig || defaults.defaultConfig,
+    };
+  } catch {
+    return defaults;
+  }
+}
+
+/**
+ * Wrap a script plugin as a {meta, render} object compatible with the plugin contract.
+ *
+ * @param {string} scriptPath - Absolute path to the executable plugin file
+ * @param {{ name: string, description: string, cacheTtl: number, defaultConfig: object }} manifest
+ * @returns {{ meta: object, render: function }}
+ */
+function wrapScriptPlugin(scriptPath, manifest) {
+  return {
+    meta: {
+      name: manifest.name,
+      description: manifest.description,
+      requires: [],
+      defaultConfig: manifest.defaultConfig,
+    },
+    render(data, config) {
+      const payload = JSON.stringify({ ...data, _config: config });
+      return cachedExecPlugin(manifest.name, scriptPath, payload, manifest.cacheTtl);
+    },
+  };
 }
 
 /**

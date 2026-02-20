@@ -70,7 +70,7 @@ export function getDefaultConfig() {
         right: ['project'],
       },
     ],
-    segments: {
+    plugins: {
       model: {
         style: 'bold cyan',
       },
@@ -114,7 +114,7 @@ function loadTheme(themeName) {
  *   1. Start with hardcoded default config
  *   2. Load theme file specified by user config (or "default" theme)
  *   3. Deep merge theme on top of defaults
- *   4. Deep merge user's per-segment config on top
+ *   4. Deep merge user's per-plugin config on top
  *   5. Return final config
  *
  * @param {string} [userConfigPath] - Path to user config file (defaults to ~/.claude/oh-my-claude/config.json)
@@ -136,7 +136,7 @@ export function loadConfig(userConfigPath) {
     config = deepMerge(config, themeConfig);
   }
 
-  // Merge user overrides: lines, separator, and per-segment config
+  // Merge user overrides: lines, separator, and per-plugin config
   if (userConfig) {
     if (Array.isArray(userConfig.lines)) {
       config.lines = userConfig.lines;
@@ -144,9 +144,9 @@ export function loadConfig(userConfigPath) {
     if (userConfig.separator != null) {
       config.separator = userConfig.separator;
     }
-    if (userConfig.segments) {
-      if (!config.segments) config.segments = {};
-      config.segments = deepMerge(config.segments, userConfig.segments);
+    if (userConfig.plugins) {
+      if (!config.plugins) config.plugins = {};
+      config.plugins = deepMerge(config.plugins, userConfig.plugins);
     }
   }
 

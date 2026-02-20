@@ -4,7 +4,7 @@
 import { mkdirSync, writeFileSync, readFileSync, statSync, readdirSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
-import { execSync } from 'node:child_process';
+import { execSync, execFileSync } from 'node:child_process';
 
 const CACHE_DIR = '/tmp/omc-cache';
 
@@ -78,6 +78,83 @@ export function cachedExec(key, command, ttlMs = 5000) {
     writeFileSync(filepath, result, 'utf8');
   } catch {
     // Can't write cache — that's fine, we still have the result.
+  }
+
+  return result;
+}
+
+/**
+ * Execute a script plugin with caching.
+ *
+ * Pipes JSON to the plugin's stdin via execFileSync, parses stdout as JSON {text, style}.
+ * Falls back to plain text output (single line → {text, style: ""}).
+ * Returns null on failure (non-zero exit, timeout, malformed output). Failures are not cached.
+ *
+ * @param {string} pluginName - Plugin name (used as cache key)
+ * @param {string} executablePath - Absolute path to the executable script
+ * @param {string} stdinPayload - JSON string to pipe to stdin
+ * @param {number} [ttlMs=5000] - Cache time-to-live in milliseconds
+ * @returns {{ text: string, style: string } | null}
+ */
+export function cachedExecPlugin(pluginName, executablePath, stdinPayload, ttlMs = 5000) {
+  if (!pluginName || !executablePath) return null;
+
+  ensureCacheDir();
+
+  const cacheKey = `plugin:${pluginName}`;
+  const filename = hashKey(cacheKey);
+  const filepath = join(CACHE_DIR, filename);
+
+  // Check cache freshness
+  try {
+    const stat = statSync(filepath);
+    const ageMs = Date.now() - stat.mtimeMs;
+    if (ageMs < ttlMs) {
+      const cached = readFileSync(filepath, 'utf8');
+      return JSON.parse(cached);
+    }
+  } catch {
+    // Cache miss — proceed to execute.
+  }
+
+  // Execute plugin
+  let stdout;
+  try {
+    stdout = execFileSync(executablePath, [], {
+      input: stdinPayload,
+      encoding: 'utf8',
+      timeout: 2000,
+      maxBuffer: 64 * 1024,
+      stdio: ['pipe', 'pipe', 'pipe'],
+    }).trim();
+  } catch {
+    // Non-zero exit or timeout — return null, don't cache failure.
+    return null;
+  }
+
+  if (!stdout) return null;
+
+  // Parse output: try JSON first, fall back to plain text
+  let result;
+  try {
+    const parsed = JSON.parse(stdout);
+    if (parsed && typeof parsed.text === 'string') {
+      result = { text: parsed.text, style: parsed.style || '' };
+    } else {
+      return null;
+    }
+  } catch {
+    // Not JSON — treat first line as plain text
+    const firstLine = stdout.split('\n')[0].trim();
+    if (!firstLine) return null;
+    result = { text: firstLine, style: '' };
+  }
+
+  // Write to cache
+  try {
+    writeFileSync(filepath, JSON.stringify(result), 'utf8');
+  } catch {
+    // Can't write cache — still have the result.
   }
 
   return result;

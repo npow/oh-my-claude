@@ -9,7 +9,7 @@
 
 import { loadConfig } from './config.js';
 import { compose } from './compositor.js';
-import { segments } from './segments/index.js';
+import { builtinPlugins } from './plugins/index.js';
 import { discoverPlugins } from './plugins.js';
 
 // Silently ignore EPIPE — Claude Code closing the pipe is normal, not an error.
@@ -76,13 +76,13 @@ async function main() {
     const config = loadConfig();
     const separator = config.separator || ' | ';
 
-    // 4. Discover plugins and merge with built-in segments
-    //    Plugins override built-ins if they share the same name.
-    let allSegments = segments;
+    // 4. Discover plugins and merge with built-ins
+    //    User plugins override built-ins if they share the same name.
+    let allPlugins = builtinPlugins;
     try {
-      const plugins = await discoverPlugins();
-      if (Object.keys(plugins).length > 0) {
-        allSegments = { ...segments, ...plugins };
+      const userPlugins = await discoverPlugins();
+      if (Object.keys(userPlugins).length > 0) {
+        allPlugins = { ...builtinPlugins, ...userPlugins };
       }
     } catch {
       // Plugin discovery failed — continue with built-ins only
@@ -100,8 +100,8 @@ async function main() {
     for (const lineDef of configLines) {
       if (!lineDef) continue;
 
-      const leftParts = renderSegments(lineDef.left, data, config, allSegments);
-      const rightParts = renderSegments(lineDef.right, data, config, allSegments);
+      const leftParts = renderPlugins(lineDef.left, data, config, allPlugins);
+      const rightParts = renderPlugins(lineDef.right, data, config, allPlugins);
 
       lineResults.push({ left: leftParts, right: rightParts });
     }
@@ -116,40 +116,40 @@ async function main() {
 }
 
 /**
- * Render an array of segment names into an array of {text, style} results.
+ * Render an array of plugin names into an array of {text, style} results.
  *
- * @param {string[]} segmentNames - Array of segment names from config
+ * @param {string[]} pluginNames - Array of plugin names from config
  * @param {object} data - Parsed stdin JSON data
  * @param {object} config - Full merged config
- * @param {Record<string, { render: function }>} segmentRegistry - Map of segment name to module
+ * @param {Record<string, { render: function }>} pluginRegistry - Map of plugin name to module
  * @returns {Array<{text: string, style: string}>}
  */
-function renderSegments(segmentNames, data, config, segmentRegistry) {
-  if (!segmentNames || !Array.isArray(segmentNames)) return [];
+function renderPlugins(pluginNames, data, config, pluginRegistry) {
+  if (!pluginNames || !Array.isArray(pluginNames)) return [];
 
   const results = [];
 
-  for (const name of segmentNames) {
+  for (const name of pluginNames) {
     if (!name || typeof name !== 'string') continue;
 
-    const segment = segmentRegistry[name];
-    if (!segment || typeof segment.render !== 'function') continue;
+    const plugin = pluginRegistry[name];
+    if (!plugin || typeof plugin.render !== 'function') continue;
 
-    const segmentConfig = (config.segments && config.segments[name]) || {};
+    const pluginConfig = (config.plugins && config.plugins[name]) || {};
 
     try {
-      const result = segment.render(data, segmentConfig);
+      const result = plugin.render(data, pluginConfig);
       if (result == null) continue;
       if (typeof result === 'string') {
-        results.push({ text: result, style: segmentConfig.style || '' });
+        results.push({ text: result, style: pluginConfig.style || '' });
       } else if (result.text != null) {
         results.push({
           text: String(result.text),
-          style: result.style || segmentConfig.style || '',
+          style: result.style || pluginConfig.style || '',
         });
       }
     } catch {
-      // Segment threw — skip it silently
+      // Plugin threw — skip it silently
       continue;
     }
   }

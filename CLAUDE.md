@@ -4,11 +4,11 @@ A statusline framework for Claude Code -- like oh-my-zsh but for Claude Code's `
 
 ## Golden Rules
 
-1. Every segment MUST export `meta` (object) and `render` (function). No exceptions.
-2. `render()` MUST return `{ text, style }` or `null`. Null means "hide this segment."
-3. Segments MUST handle missing/undefined data fields gracefully. Never crash the statusline.
-4. Git and system segments MUST use the cache layer (`src/cache.js`) for shell commands.
-5. Themes are JSON files in `themes/`. They declare left/right segment layout per line.
+1. Every plugin MUST export `meta` (object) and `render` (function). No exceptions.
+2. `render()` MUST return `{ text, style }` or `null`. Null means "hide this plugin."
+3. Plugins MUST handle missing/undefined data fields gracefully. Never crash the statusline.
+4. Git and system plugins MUST use the cache layer (`src/cache.js`) for shell commands.
+5. Themes are JSON files in `themes/`. They declare left/right plugin layout per line.
 6. Zero npm dependencies. Node 18+ built-ins only. No exceptions.
 
 ## File Structure
@@ -21,7 +21,7 @@ src/
   compositor.js         Multi-line left/right alignment and output
   color.js              Style string -> ANSI escape code parser
   cache.js              TTL cache for shell command results
-  segments/             Built-in segments (one file per segment)
+  plugins/              Built-in plugins (one file per plugin)
     model.js            Model name/id display
     context.js          Context window usage
     cost.js             Session cost in USD
@@ -32,7 +32,7 @@ tests/
   fixtures/             Sample stdin JSON for testing
   *.test.js             Node test runner tests
 scripts/
-  validate.js           Validates all segments export correct shape
+  validate.js           Validates all plugins export correct shape
 docs/                   Deep documentation (see below)
 ```
 
@@ -40,19 +40,19 @@ docs/                   Deep documentation (see below)
 
 | Doc | What it covers |
 |-----|----------------|
-| [docs/segment-contract.md](docs/segment-contract.md) | Full segment API: meta, render, data fields, return values |
+| [docs/plugin-contract.md](docs/plugin-contract.md) | Full plugin API: meta, render, data fields, return values |
 | [docs/architecture.md](docs/architecture.md) | Pipeline, caching, config resolution, compositor |
 | [docs/theme-format.md](docs/theme-format.md) | Theme JSON schema and how themes are loaded |
 
-## Segment Contract (Quick Reference)
+## Plugin Contract (Quick Reference)
 
 ```js
-// src/segments/example.js
+// src/plugins/example.js
 export const meta = {
   name: "example",
   description: "One-line description",
   requires: [],           // e.g. ["git"] for external deps
-  defaultConfig: {}       // segment-specific defaults
+  defaultConfig: {}       // plugin-specific defaults
 };
 
 export function render(data, config) {
@@ -64,7 +64,7 @@ export function render(data, config) {
 
 Three rules: export `meta`, export `render`, return `{ text, style }` or `null`.
 
-Full spec: [docs/segment-contract.md](docs/segment-contract.md)
+Full spec: [docs/plugin-contract.md](docs/plugin-contract.md)
 
 ## Data Fields (stdin JSON)
 
@@ -80,7 +80,7 @@ The `data` object passed to `render()` comes directly from Claude Code. Key path
 - `output_style.name`, `vim.mode`, `agent.name`
 - `exceeds_200k_tokens`
 
-Full reference: [docs/segment-contract.md](docs/segment-contract.md)
+Full reference: [docs/plugin-contract.md](docs/plugin-contract.md)
 
 ## Testing
 
@@ -88,16 +88,16 @@ Full reference: [docs/segment-contract.md](docs/segment-contract.md)
 # Run all tests
 npm test
 
-# Validate every segment exports correct shape
+# Validate every plugin exports correct shape
 npm run validate
 
 # Manual smoke test with sample data
 npm start
 ```
 
-When adding a segment, also add a test in `tests/` covering: normal data, null fields, and edge cases.
+When adding a plugin, also add a test in `tests/` covering: normal data, null fields, and edge cases.
 
 ## Style Strings
 
 Space-separated tokens: `"bold cyan"`, `"bg:red white"`, `"dim yellow"`.
-Parsed by `src/color.js`. See [docs/segment-contract.md](docs/segment-contract.md) for full list.
+Parsed by `src/color.js`. See [docs/plugin-contract.md](docs/plugin-contract.md) for full list.

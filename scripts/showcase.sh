@@ -1,7 +1,7 @@
 #!/bin/bash
 # scripts/showcase.sh — Generate all showcase screenshots
 #
-# Each showcase runs in a fresh Node process so module-level segment state
+# Each showcase runs in a fresh Node process so module-level plugin state
 # (achievements, emoji-story, etc.) resets between screenshots.
 #
 # Usage:
@@ -14,7 +14,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 FIXTURES="$ROOT/tests/fixtures"
 TMP_CONFIG="/tmp/omc-showcase-config.json"
 
-# Set up streak file so the streak segment shows "7d streak"
+# Set up streak file so the streak plugin shows "7d streak"
 echo '{"lastDate":"'"$(date +%Y-%m-%d)"'","count":7}' > /tmp/omc-streak.json
 
 run_showcase() {

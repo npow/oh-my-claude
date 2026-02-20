@@ -8,7 +8,7 @@
     }
   ],
   "separator": " \u00b7 ",
-  "segments": {
+  "plugins": {
     "directory": {
       "style": "white",
       "format": "basename"

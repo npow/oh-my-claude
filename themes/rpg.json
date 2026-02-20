@@ -16,7 +16,7 @@
     }
   ],
   "separator": " ",
-  "segments": {
+  "plugins": {
     "model-name": {
       "style": "bold cyan",
       "icon": true

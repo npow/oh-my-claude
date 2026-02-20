@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-// scripts/validate.js — Segment contract validator (custom linter)
-// Checks every segment file in src/segments/ against the contract spec.
+// scripts/validate.js — Plugin contract validator (custom linter)
+// Checks every plugin file in src/plugins/ against the contract spec.
 // Agent-friendly error messages: tells you exactly what's wrong and how to fix it.
 
 import { readdir } from 'node:fs/promises';
@@ -9,7 +9,7 @@ import { join, dirname, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const SEGMENTS_DIR = join(__dirname, '..', 'src', 'segments');
+const PLUGINS_DIR = join(__dirname, '..', 'src', 'plugins');
 
 const MOCK_DATA = {
   model: { id: 'claude-opus-4-6', display_name: 'Opus' },
@@ -44,7 +44,7 @@ function pass(file, check) {
   passed++;
 }
 
-async function validateSegment(filepath) {
+async function validatePlugin(filepath) {
   const filename = basename(filepath, '.js');
 
   // Skip index.js
@@ -128,7 +128,7 @@ async function validateSegment(filepath) {
       fail(filename, `render() returned unexpected type: ${typeof result}`, 'Return { text: "...", style: "..." } or null.');
     }
   } else {
-    pass(filename, 'render returns null (segment hidden for this data)');
+    pass(filename, 'render returns null (plugin hidden for this data)');
   }
 
   // Check: render handles null/empty data gracefully
@@ -151,29 +151,29 @@ async function validateSegment(filepath) {
 }
 
 async function main() {
-  console.log('oh-my-claude segment validator\n');
-  console.log('Scanning src/segments/ ...\n');
+  console.log('oh-my-claude plugin validator\n');
+  console.log('Scanning src/plugins/ ...\n');
 
   let files;
   try {
-    files = await readdir(SEGMENTS_DIR);
+    files = await readdir(PLUGINS_DIR);
   } catch {
-    console.error('ERROR: Could not read src/segments/ directory');
+    console.error('ERROR: Could not read src/plugins/ directory');
     process.exit(1);
   }
 
   const jsFiles = files.filter(f => f.endsWith('.js') && f !== 'index.js');
 
   if (jsFiles.length === 0) {
-    console.log('No segment files found.');
+    console.log('No plugin files found.');
     process.exit(0);
   }
 
-  console.log(`Found ${jsFiles.length} segment(s)\n`);
+  console.log(`Found ${jsFiles.length} plugin(s)\n`);
 
   for (const file of jsFiles.sort()) {
-    const filepath = join(SEGMENTS_DIR, file);
-    await validateSegment(filepath);
+    const filepath = join(PLUGINS_DIR, file);
+    await validatePlugin(filepath);
   }
 
   console.log('─'.repeat(50));
@@ -187,7 +187,7 @@ async function main() {
     }
     process.exit(1);
   } else {
-    console.log(`  All segments valid!\n`);
+    console.log(`  All plugins valid!\n`);
     process.exit(0);
   }
 }

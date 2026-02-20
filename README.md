@@ -1,6 +1,8 @@
 # oh-my-claude
 
-**Like oh-my-zsh, but for Claude Code.** An extensible statusline framework with themes and plugins.
+**Themes and plugins for [Claude Code's](https://docs.anthropic.com/en/docs/claude-code) status bar.**
+
+[Claude Code](https://docs.anthropic.com/en/docs/claude-code) has a [statusline](https://docs.anthropic.com/en/docs/claude-code/settings#statusline) -- a bar pinned to the bottom of your terminal. It's blank by default. oh-my-claude gives it something to say.
 
 ![oh-my-claude themes](screenshots/hero.gif)
 
@@ -8,6 +10,17 @@
 [![CI](https://img.shields.io/github/actions/workflow/status/npow/oh-my-claude/ci.yml?label=CI)](https://github.com/npow/oh-my-claude/actions/workflows/ci.yml)
 [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 [![node](https://img.shields.io/node/v/@npow/oh-my-claude)](package.json)
+
+Claude Code streams your session data (model, context usage, cost, git info) into the statusline as JSON. oh-my-claude picks it up, runs it through a pipeline of **plugins** -- small functions that each render one piece of the bar -- and writes styled output back. A **theme** is just a layout: which plugins, in what order, left or right aligned.
+
+Some plugins show data straight: `42%`, `$2.41`, `main`. Others get creative -- `battle-log` turns context usage into a dungeon crawl (`⚔️ Boss Battle (85%)`), `garden` grows an ASCII plant as you add lines of code, and `coffee-cup` drains over a 2-hour session. A few are just for fun (`fortune-cookie`, `cat`). Themes mix and match all of these.
+
+| Your session | `default` | `boss-battle` | `tamagotchi` |
+|---|---|---|---|
+| 42% context | `██████░░░░ 42%` | `🗡️ Mid Dungeon (42%)` | `(^.^)` happy pet |
+| 85% context | `████████████░░ 85%` | `⚔️ Boss Battle (85%)` | `(×_×)!!` panicking pet |
+| 250 lines added | `+250` | `+250 gold` | `(🌿)` growing garden |
+| 45min in | `45m 0s` | `45m 0s` | `[█░░░]` coffee half-empty |
 
 ## Install
 
@@ -96,11 +109,11 @@ Run `npm run showcase` to see all themes live in your terminal.
 
 ---
 
-## 41 segments, mix and match
+## 41 plugins, mix and match
 
 ### Have fun while you wait
 
-| Segment | What it does | Example |
+| Plugin | What it does | Example |
 |---------|--------------|---------|
 | `tamagotchi` | Virtual pet reacts to your session | `(^.^)` happy, `(x_x) RIP` at 95% context |
 | `cat` | A cat doing cat things | `=^._.^= *sits on context window*` |
@@ -117,7 +130,7 @@ Run `npm run showcase` to see all themes live in your terminal.
 
 ### Gamify your session
 
-| Segment | What it does | Example |
+| Plugin | What it does | Example |
 |---------|--------------|---------|
 | `achievement` | Unlockable badges | `Centurion` at 100 lines, `Whale` at $20 |
 | `rpg-stats` | D&D character sheet | `Lv.9 STR:18 DEX:4 INT:11 WIS:18 CHA:0` |
@@ -129,7 +142,7 @@ Run `npm run showcase` to see all themes live in your terminal.
 
 ### Stay productive
 
-| Segment | What it shows | Example |
+| Plugin | What it shows | Example |
 |---------|---------------|---------|
 | `context-bar` | Visual context progress bar | `██████░░░░░░░░░ 38%` |
 | `context-percent` | Context usage as number | `38%` |
@@ -150,9 +163,9 @@ Run `npm run showcase` to see all themes live in your terminal.
 
 ### Layout building blocks
 
-| Segment | Purpose |
+| Plugin | Purpose |
 |---------|---------|
-| `separator-pipe` | Pipe `│` between segments |
+| `separator-pipe` | Pipe `│` between plugins |
 | `separator-arrow` | Powerline arrow separator |
 | `separator-space` | Whitespace |
 | `flex-space` | Right-alignment marker |
@@ -209,20 +222,20 @@ See [screenshots above](#pick-your-vibe) for each theme in action.
 
 ---
 
-## Add your own segment
+## Write your own
 
-No fork needed. Plugins live in their own directory:
+No fork needed:
 
 ```bash
-omc create my-segment
+omc create my-plugin
 ```
 
-Creates `~/.claude/oh-my-claude/plugins/my-segment/segment.js`:
+Creates `~/.claude/oh-my-claude/plugins/my-plugin/plugin.js`:
 
 ```js
 export const meta = {
-  name: 'my-segment',
-  description: 'My custom segment',
+  name: 'my-plugin',
+  description: 'My custom plugin',
   requires: [],
   defaultConfig: {},
 };
@@ -234,9 +247,9 @@ export function render(data, config) {
 
 Add it to your theme and it takes effect immediately. Three rules: export `meta`, export `render`, return `{ text, style }` or `null`.
 
-Full data field reference: [docs/segment-contract.md](docs/segment-contract.md)
+Full data field reference: [docs/plugin-contract.md](docs/plugin-contract.md)
 
-**Share your segment:** PR it into `src/segments/` or post your `segment.js` anywhere -- others drop it in their plugins directory.
+**Share it:** PR it into `src/plugins/` or post your `plugin.js` anywhere -- others drop it in their plugins directory and go.
 
 ---
 
@@ -246,9 +259,9 @@ Full data field reference: [docs/segment-contract.md](docs/segment-contract.md)
 omc install               Interactive setup wizard
 omc theme <name>          Switch theme (e.g. omc theme tamagotchi)
 omc themes                List available themes
-omc create <name>         Scaffold a new plugin segment
-omc list                  List all 41 segments
-omc validate              Check segment contract compliance
+omc create <name>         Scaffold a new plugin
+omc list                  List all 41 built-in plugins
+omc validate              Check plugin contract compliance
 omc uninstall             Remove from Claude Code
 ```
 
@@ -261,7 +274,7 @@ omc uninstall             Remove from Claude Code
 
 ## Contributing
 
-PRs welcome. One file per segment, export `meta` + `render`, handle nulls, run `npm run validate`.
+PRs welcome. One file per plugin, export `meta` + `render`, handle nulls, run `npm run validate`.
 
 ## License
 

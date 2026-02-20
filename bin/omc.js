@@ -2,13 +2,14 @@
 
 // bin/omc.js — oh-my-claude CLI
 // Usage: npx oh-my-claude [command]
-// Commands: install, theme, themes, uninstall, list, validate, create
+// Commands: install, install <url>, theme, themes, uninstall, list, validate, create
 
-import { readFileSync, writeFileSync, mkdirSync, cpSync, existsSync, readdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, cpSync, existsSync, readdirSync, chmodSync, accessSync, constants } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { homedir } from 'node:os';
 import { createInterface } from 'node:readline';
+import { execSync } from 'node:child_process';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PACKAGE_ROOT = join(__dirname, '..');
@@ -90,7 +91,7 @@ async function install() {
   // 5. Write user config
   const config = {
     theme,
-    segments: {
+    plugins: {
       'cost-budget': { budget },
     },
   };
@@ -142,6 +143,93 @@ async function install() {
   log(`Uninstall: omc uninstall${C.reset}\n`);
 }
 
+// ─── Install Plugin from URL/Path ────────────────
+
+/**
+ * Extract a plugin name from a git URL or local path.
+ * Strips .git suffix, takes the last path component, lowercases it.
+ */
+function extractRepoName(urlOrPath) {
+  const cleaned = urlOrPath.replace(/\/+$/, '').replace(/\.git$/, '');
+  const parts = cleaned.split('/');
+  return parts[parts.length - 1].toLowerCase();
+}
+
+/**
+ * Install a plugin from a git URL or local path.
+ */
+function installPlugin(urlOrPath) {
+  if (!urlOrPath) {
+    warn('Usage: omc install <git-url-or-path>');
+    log(`\n${C.dim}Example: omc install https://github.com/user/omc-plugin-hello${C.reset}`);
+    log(`${C.dim}         omc install /path/to/local/plugin${C.reset}\n`);
+    process.exit(1);
+  }
+
+  const name = extractRepoName(urlOrPath);
+  const dest = join(PLUGINS_DIR, name);
+
+  if (existsSync(dest)) {
+    warn(`Plugin "${name}" already exists at:`);
+    log(`  ${C.dim}${dest}${C.reset}`);
+    log(`\n${C.dim}To reinstall, remove it first: rm -rf ${dest}${C.reset}\n`);
+    process.exit(1);
+  }
+
+  mkdirSync(PLUGINS_DIR, { recursive: true });
+
+  log(`\n${C.bold}Installing plugin:${C.reset} ${name}\n`);
+
+  try {
+    execSync(`git clone --depth 1 ${urlOrPath} ${dest}`, {
+      encoding: 'utf8',
+      stdio: ['pipe', 'pipe', 'pipe'],
+      timeout: 30000,
+    });
+  } catch (err) {
+    warn(`Failed to clone: ${err.message || 'unknown error'}`);
+    process.exit(1);
+  }
+
+  // Check for valid plugin: plugin.js or executable plugin
+  const hasPluginJs = existsSync(join(dest, 'plugin.js'));
+  const pluginScript = join(dest, 'plugin');
+  let hasPluginScript = false;
+
+  if (existsSync(pluginScript)) {
+    // Ensure executable bit is set
+    try {
+      chmodSync(pluginScript, 0o755);
+      hasPluginScript = true;
+    } catch {
+      // chmod failed — try to use it anyway
+      hasPluginScript = true;
+    }
+  }
+
+  if (!hasPluginJs && !hasPluginScript) {
+    warn(`No plugin.js or executable plugin file found in cloned repo.`);
+    log(`${C.dim}Cleaning up ${dest}${C.reset}`);
+    try { execSync(`rm -rf ${dest}`, { stdio: 'pipe' }); } catch {}
+    process.exit(1);
+  }
+
+  const pluginType = hasPluginJs ? 'JS (plugin.js)' : 'Script (plugin)';
+
+  success(`Installed ${C.bold}${name}${C.reset} → ${dest}`);
+  log(`  ${C.dim}Type: ${pluginType}${C.reset}`);
+
+  // Show plugin.json info if present
+  try {
+    const manifest = JSON.parse(readFileSync(join(dest, 'plugin.json'), 'utf8'));
+    if (manifest.description) log(`  ${C.dim}${manifest.description}${C.reset}`);
+  } catch {}
+
+  log(`\n${C.bold}To use it:${C.reset}`);
+  log(`  Add ${C.cyan}"${name}"${C.reset} to a theme's lines array in your config:`);
+  log(`  ${C.dim}${CONFIG_PATH}${C.reset}\n`);
+}
+
 // ─── Themes ──────────────────────────────────────
 
 function listThemes() {
@@ -165,19 +253,19 @@ function listThemes() {
 
       const marker = active ? `${C.green} ●${C.reset}` : '  ';
       log(`${marker} ${C.bold}${name}${C.reset} — ${C.dim}${theme.description || ''}${C.reset}`);
-      log(`     ${C.dim}Lines: ${theme.lines?.length || 0} | Segments: ${[...(theme.lines || [])].flatMap(l => [...(l.left || []), ...(l.right || [])]).length}${C.reset}`);
+      log(`     ${C.dim}Lines: ${theme.lines?.length || 0} | Plugins: ${[...(theme.lines || [])].flatMap(l => [...(l.left || []), ...(l.right || [])]).length}${C.reset}`);
     } catch {}
   }
   log('');
 }
 
-// ─── List Segments ───────────────────────────────
+// ─── List Plugins ────────────────────────────────
 
-async function listSegments() {
-  log(`\n${C.bold}Built-in segments:${C.reset}\n`);
-  const segDir = existsSync(join(OMC_DIR, 'src', 'segments'))
-    ? join(OMC_DIR, 'src', 'segments')
-    : join(PACKAGE_ROOT, 'src', 'segments');
+async function listPlugins() {
+  log(`\n${C.bold}Built-in plugins:${C.reset}\n`);
+  const plugDir = existsSync(join(OMC_DIR, 'src', 'plugins'))
+    ? join(OMC_DIR, 'src', 'plugins')
+    : join(PACKAGE_ROOT, 'src', 'plugins');
 
   const MOCK_DATA = {
     model: { id: 'claude-opus-4-6', display_name: 'Opus' },
@@ -187,11 +275,11 @@ async function listSegments() {
     session_id: 'demo', version: '2.1.34',
   };
 
-  const files = readdirSync(segDir).filter(f => f.endsWith('.js') && f !== 'index.js').sort();
+  const files = readdirSync(plugDir).filter(f => f.endsWith('.js') && f !== 'index.js').sort();
 
   for (const file of files) {
     try {
-      const mod = await import(join(segDir, file));
+      const mod = await import(join(plugDir, file));
       const name = mod.meta?.name || file.replace('.js', '');
       const desc = mod.meta?.description || '';
       const requires = mod.meta?.requires?.length ? ` ${C.yellow}[${mod.meta.requires.join(', ')}]${C.reset}` : '';
@@ -205,7 +293,7 @@ async function listSegments() {
       log(`  ${C.cyan}${name}${C.reset} — ${desc}${requires}${preview}`);
     } catch {}
   }
-  log(`\n${C.dim}${files.length} segments available${C.reset}`);
+  log(`\n${C.dim}${files.length} plugins available${C.reset}`);
 
   // List plugins
   let pluginCount = 0;
@@ -216,33 +304,70 @@ async function listSegments() {
 
       for (const entry of pluginEntries) {
         const entryPath = join(PLUGINS_DIR, entry);
-        const segmentPath = join(entryPath, 'segment.js');
         try {
           const { statSync: statSyncFs } = await import('node:fs');
           const stat = statSyncFs(entryPath);
           if (!stat.isDirectory()) continue;
-          if (!existsSync(segmentPath)) continue;
 
-          const { pathToFileURL } = await import('node:url');
-          const mod = await import(pathToFileURL(segmentPath).href);
-          if (!mod.meta || typeof mod.meta.name !== 'string' || typeof mod.render !== 'function') {
+          // Try plugin.js first
+          const pluginJsPath = join(entryPath, 'plugin.js');
+          if (existsSync(pluginJsPath)) {
+            try {
+              const { pathToFileURL } = await import('node:url');
+              const mod = await import(pathToFileURL(pluginJsPath).href);
+              if (!mod.meta || typeof mod.meta.name !== 'string' || typeof mod.render !== 'function') {
+                validPlugins.push({
+                  name: entry,
+                  desc: `${C.red}(invalid: missing meta.name or render)${C.reset}`,
+                  path: pluginJsPath,
+                  type: 'js',
+                });
+              } else {
+                validPlugins.push({
+                  name: mod.meta.name,
+                  desc: mod.meta.description || '',
+                  path: pluginJsPath,
+                  type: 'js',
+                });
+              }
+            } catch (err) {
+              validPlugins.push({
+                name: entry,
+                desc: `${C.red}(error: ${err.message})${C.reset}`,
+                path: pluginJsPath,
+                type: 'js',
+              });
+            }
+            continue;
+          }
+
+          // Fallback: check for executable plugin (script plugin)
+          const scriptPath = join(entryPath, 'plugin');
+          if (existsSync(scriptPath)) {
+            let isExecutable = false;
+            try { accessSync(scriptPath, constants.X_OK); isExecutable = true; } catch {}
+
+            let pluginName = entry;
+            let pluginDesc = '';
+            try {
+              const manifest = JSON.parse(readFileSync(join(entryPath, 'plugin.json'), 'utf8'));
+              if (manifest.name) pluginName = manifest.name;
+              if (manifest.description) pluginDesc = manifest.description;
+            } catch {}
+
             validPlugins.push({
-              name: entry,
-              desc: `${C.red}(invalid: missing meta.name or render)${C.reset}`,
-              path: segmentPath,
-            });
-          } else {
-            validPlugins.push({
-              name: mod.meta.name,
-              desc: mod.meta.description || '',
-              path: segmentPath,
+              name: pluginName,
+              desc: pluginDesc + (isExecutable ? '' : ` ${C.red}(not executable)${C.reset}`),
+              path: scriptPath,
+              type: 'script',
             });
           }
         } catch (err) {
           validPlugins.push({
             name: entry,
             desc: `${C.red}(error: ${err.message})${C.reset}`,
-            path: segmentPath,
+            path: join(entryPath, 'plugin'),
+            type: 'unknown',
           });
         }
       }
@@ -250,7 +375,8 @@ async function listSegments() {
       if (validPlugins.length > 0) {
         log(`\n${C.bold}Plugins:${C.reset}\n`);
         for (const p of validPlugins) {
-          log(`  ${C.magenta}${p.name}${C.reset} — ${p.desc}`);
+          const typeLabel = p.type === 'script' ? `${C.yellow}[script]${C.reset} ` : '';
+          log(`  ${C.magenta}${p.name}${C.reset} ${typeLabel}— ${p.desc}`);
           log(`    ${C.dim}${p.path}${C.reset}`);
         }
         pluginCount = validPlugins.length;
@@ -260,7 +386,7 @@ async function listSegments() {
   }
 
   if (pluginCount === 0) {
-    log(`\n${C.dim}No plugins installed. Run ${C.reset}${C.cyan}omc create <name>${C.reset}${C.dim} to create one.${C.reset}`);
+    log(`\n${C.dim}No plugins installed. Run ${C.reset}${C.cyan}omc create <name>${C.reset}${C.dim} to create one, or ${C.reset}${C.cyan}omc install <url>${C.reset}${C.dim} to install from git.${C.reset}`);
   }
 
   log('');
@@ -268,50 +394,131 @@ async function listSegments() {
 
 // ─── Create Plugin ───────────────────────────────
 
-function createPlugin(name) {
+function createPlugin(name, args) {
   if (!name || typeof name !== 'string') {
-    warn('Usage: omc create <segment-name>');
-    log(`\n${C.dim}Example: omc create my-segment${C.reset}\n`);
+    warn('Usage: omc create <plugin-name> [--script] [--lang=python|bash]');
+    log(`\n${C.dim}Example: omc create my-plugin`);
+    log(`         omc create my-plugin --script --lang=python${C.reset}\n`);
     process.exit(1);
   }
 
-  // Validate segment name: lowercase letters, numbers, hyphens only
+  // Validate plugin name: lowercase letters, numbers, hyphens only
   if (!/^[a-z][a-z0-9-]*$/.test(name)) {
-    warn(`Invalid segment name: "${name}"`);
+    warn(`Invalid plugin name: "${name}"`);
     log(`\n${C.dim}Names must start with a lowercase letter and contain only lowercase letters, numbers, and hyphens.${C.reset}`);
-    log(`${C.dim}Example: my-segment, cpu-usage, weather-v2${C.reset}\n`);
+    log(`${C.dim}Example: my-plugin, cpu-usage, weather-v2${C.reset}\n`);
     process.exit(1);
   }
+
+  // Parse flags
+  const isScript = args.includes('--script');
+  const langFlag = args.find(a => a.startsWith('--lang='));
+  const lang = langFlag ? langFlag.split('=')[1] : 'python';
 
   const pluginDir = join(PLUGINS_DIR, name);
-  const segmentPath = join(pluginDir, 'segment.js');
 
   // Check if plugin already exists
-  if (existsSync(segmentPath)) {
+  if (existsSync(pluginDir)) {
     warn(`Plugin "${name}" already exists at:`);
-    log(`  ${C.dim}${segmentPath}${C.reset}\n`);
+    log(`  ${C.dim}${pluginDir}${C.reset}\n`);
     process.exit(1);
   }
 
-  // Create plugin directory and segment file
   mkdirSync(pluginDir, { recursive: true });
 
-  const template = `// ${segmentPath}
-// Custom segment for oh-my-claude.
+  if (isScript) {
+    // Script plugin: executable plugin + plugin.json
+    const scriptPath = join(pluginDir, 'plugin');
+    const manifestPath = join(pluginDir, 'plugin.json');
+
+    const manifest = {
+      name,
+      description: 'My custom script plugin',
+      cacheTtl: 5000,
+      defaultConfig: {},
+    };
+    writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
+
+    let scriptContent;
+    if (lang === 'bash') {
+      scriptContent = `#!/usr/bin/env bash
+# ${name} — script plugin for oh-my-claude
+# Reads Claude Code JSON from stdin, outputs {text, style} JSON to stdout.
+# Exit non-zero to hide the plugin.
+
+set -euo pipefail
+
+# Read stdin JSON
+INPUT=$(cat)
+
+# Extract a field (requires jq — or use other tools)
+# MODEL=$(echo "$INPUT" | jq -r '.model.display_name // empty')
+# CONFIG_VAL=$(echo "$INPUT" | jq -r '._config.myKey // empty')
+
+# Output JSON
+echo '{"text": "Hello from ${name}!", "style": "cyan"}'
+`;
+    } else {
+      // Default: Python
+      scriptContent = `#!/usr/bin/env python3
+"""${name} — script plugin for oh-my-claude.
+
+Reads Claude Code JSON from stdin, outputs {text, style} JSON to stdout.
+Exit non-zero to hide the plugin.
+"""
+
+import json
+import sys
+
+
+def main():
+    try:
+        data = json.load(sys.stdin)
+    except (json.JSONDecodeError, EOFError):
+        sys.exit(1)
+
+    # Access Claude Code data fields
+    # model_name = data.get("model", {}).get("display_name", "")
+    # cost = data.get("cost", {}).get("total_cost_usd", 0)
+
+    # Access per-plugin config (merged under _config key)
+    # config = data.get("_config", {})
+
+    # Output JSON to stdout
+    json.dump({"text": "Hello from ${name}!", "style": "cyan"}, sys.stdout)
+
+
+if __name__ == "__main__":
+    main()
+`;
+    }
+
+    writeFileSync(scriptPath, scriptContent);
+    chmodSync(scriptPath, 0o755);
+
+    log(`\n${C.green}${C.bold}Script plugin created!${C.reset}\n`);
+    success(`Script: ${scriptPath}`);
+    success(`Manifest: ${manifestPath}`);
+  } else {
+    // JS plugin: plugin.js
+    const pluginPath = join(pluginDir, 'plugin.js');
+
+    const template = `// ${pluginPath}
+// Custom plugin for oh-my-claude.
 // Add "${name}" to your theme's lines array to use it.
 
 export const meta = {
   name: '${name}',
-  description: 'My custom segment',
+  description: 'My custom plugin',
   requires: [],
   defaultConfig: {},
 };
 
 /**
- * Render this segment.
+ * Render this plugin.
  *
  * @param {object} data - JSON from Claude Code (use optional chaining: data?.model?.display_name)
- * @param {object} config - Per-segment config from your theme/config.json
+ * @param {object} config - Per-plugin config from your theme/config.json
  * @returns {{ text: string, style: string } | null} Return { text, style } or null to hide
  */
 export function render(data, config) {
@@ -325,20 +532,22 @@ export function render(data, config) {
   //   data?.session_id
   //   data?.version
   //
-  // Return null to hide the segment when data is unavailable.
+  // Return null to hide the plugin when data is unavailable.
   // Never throw — return null instead.
 
   return { text: 'Hello from ${name}!', style: 'cyan' };
 }
 `;
 
-  writeFileSync(segmentPath, template);
+    writeFileSync(pluginPath, template);
 
-  log(`\n${C.green}${C.bold}Plugin created!${C.reset}\n`);
-  success(`File: ${segmentPath}`);
+    log(`\n${C.green}${C.bold}Plugin created!${C.reset}\n`);
+    success(`File: ${pluginPath}`);
+  }
+
   log(`\n${C.bold}To use it:${C.reset}\n`);
-  log(`  1. Edit the segment file to customize it:`);
-  log(`     ${C.dim}${segmentPath}${C.reset}\n`);
+  log(`  1. Edit the plugin file to customize it:`);
+  log(`     ${C.dim}${pluginDir}${C.reset}\n`);
   log(`  2. Add ${C.cyan}"${name}"${C.reset} to a theme's lines array in your config:`);
   log(`     ${C.dim}${CONFIG_PATH}${C.reset}\n`);
   log(`     Example config.json snippet:`);
@@ -347,7 +556,7 @@ export function render(data, config) {
   log(`         { "left": ["model-name", "${name}"], "right": ["session-cost"] }`);
   log(`       ]`);
   log(`     }${C.reset}\n`);
-  log(`  3. Restart Claude Code to see your segment.\n`);
+  log(`  3. Restart Claude Code to see your plugin.\n`);
 }
 
 // ─── Set Theme ──────────────────────────────────
@@ -462,9 +671,16 @@ function uninstall() {
 const command = process.argv[2] || 'install';
 
 switch (command) {
-  case 'install':
-    install().catch(err => { console.error(err); process.exit(1); });
+  case 'install': {
+    // Disambiguate: if arg looks like a URL or path, install a plugin
+    const installArg = process.argv[3];
+    if (installArg && (installArg.includes('/') || installArg.includes(':') || installArg.startsWith('.'))) {
+      installPlugin(installArg);
+    } else {
+      install().catch(err => { console.error(err); process.exit(1); });
+    }
     break;
+  }
   case 'themes':
     listThemes();
     break;
@@ -476,11 +692,11 @@ switch (command) {
     }
     break;
   case 'list':
-  case 'segments':
-    listSegments().catch(err => { console.error(err); process.exit(1); });
+  case 'plugins':
+    listPlugins().catch(err => { console.error(err); process.exit(1); });
     break;
   case 'create':
-    createPlugin(process.argv[3]);
+    createPlugin(process.argv[3], process.argv.slice(4));
     break;
   case 'uninstall':
   case 'remove':
@@ -495,13 +711,17 @@ switch (command) {
     log(`\n${C.bold}oh-my-claude${C.reset} — The framework for Claude Code statuslines\n`);
     log(`${C.bold}Usage:${C.reset} omc <command>\n`);
     log(`${C.bold}Commands:${C.reset}`);
-    log(`  ${C.cyan}install${C.reset}     Install oh-my-claude (interactive wizard)`);
-    log(`  ${C.cyan}theme${C.reset}       Set theme (omc theme <name>) or list themes`);
-    log(`  ${C.cyan}list${C.reset}        List all available segments`);
-    log(`  ${C.cyan}create${C.reset}      Create a new plugin segment (omc create <name>)`);
-    log(`  ${C.cyan}validate${C.reset}    Run the segment contract validator`);
-    log(`  ${C.cyan}uninstall${C.reset}   Remove oh-my-claude from Claude Code`);
-    log(`  ${C.cyan}help${C.reset}        Show this help message\n`);
+    log(`  ${C.cyan}install${C.reset}          Install oh-my-claude (interactive wizard)`);
+    log(`  ${C.cyan}install <url>${C.reset}    Install a plugin from a git URL or local path`);
+    log(`  ${C.cyan}theme${C.reset}            Set theme (omc theme <name>) or list themes`);
+    log(`  ${C.cyan}list${C.reset}             List all available plugins`);
+    log(`  ${C.cyan}create <name>${C.reset}    Create a new JS plugin`);
+    log(`  ${C.cyan}create <name> --script${C.reset}`);
+    log(`                     Create a script plugin (any language)`);
+    log(`                     ${C.dim}--lang=python|bash (default: python)${C.reset}`);
+    log(`  ${C.cyan}validate${C.reset}         Run the plugin contract validator`);
+    log(`  ${C.cyan}uninstall${C.reset}        Remove oh-my-claude from Claude Code`);
+    log(`  ${C.cyan}help${C.reset}             Show this help message\n`);
     break;
   default:
     warn(`Unknown command: ${command}`);

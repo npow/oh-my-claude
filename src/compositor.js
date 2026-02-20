@@ -47,9 +47,9 @@ function detectWidth() {
 }
 
 /**
- * Render an array of segment results into a styled string joined by separator.
+ * Render an array of plugin results into a styled string joined by separator.
  *
- * @param {Array<{text: string, style: string}>} parts - Segment outputs
+ * @param {Array<{text: string, style: string}>} parts - Plugin outputs
  * @param {string} separator - Plain separator string (will not be styled)
  * @returns {{ rendered: string, plainLength: number }}
  */
@@ -80,9 +80,9 @@ function renderSide(parts, separator) {
 /**
  * Compose the final statusline output from line definitions.
  *
- * @param {Array<{left: Array, right: Array}>} lines - Line objects with left/right segment arrays
+ * @param {Array<{left: Array, right: Array}>} lines - Line objects with left/right plugin arrays
  * @param {number} [terminalWidth] - Terminal width override (defaults to process.stdout.columns or 80)
- * @param {string} [separator] - Separator between segments (default: ' | ')
+ * @param {string} [separator] - Separator between plugins (default: ' | ')
  * @returns {string} Final formatted output string (lines joined by newline)
  */
 export function compose(lines, terminalWidth, separator) {
