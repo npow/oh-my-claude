@@ -1,11 +1,16 @@
 // src/compositor.js — Layout engine
 // Zero dependencies. Node 18+ ESM.
 
+import { openSync, closeSync } from 'fs';
+import * as tty from 'tty';
 import { stylize, stripAnsi } from './color.js';
 
 /**
- * Detect terminal width. Safe methods only — no /dev/tty access, no shell
- * subprocesses. Those can corrupt the terminal when run from a piped subprocess.
+ * Detect terminal width.
+ *
+ * Claude Code pipes JSON to our stdin and reads our stdout, so
+ * process.stdout.columns is undefined (it's a pipe, not a TTY).
+ * We open /dev/tty directly to query the real terminal size via ioctl.
  *
  * @returns {number}
  */
@@ -26,7 +31,19 @@ function detectWidth() {
   if (process.stdout.columns) return process.stdout.columns;
   if (process.stderr.columns) return process.stderr.columns;
 
-  // 4. Fallback — most modern terminals are wider than 80
+  // 4. Open /dev/tty to get real terminal width (read-only ioctl, safe from pipes)
+  try {
+    const fd = openSync('/dev/tty', 'r');
+    const stream = new tty.ReadStream(fd);
+    const cols = stream.columns;
+    stream.destroy();
+    closeSync(fd);
+    if (cols > 0) return cols;
+  } catch {
+    // /dev/tty unavailable (e.g., CI, Docker without TTY)
+  }
+
+  // 5. Fallback — most modern terminals are wider than 80
   return 120;
 }
 
