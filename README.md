@@ -1,117 +1,138 @@
 # oh-my-claude
 
-**A statusline framework for [Claude Code](https://docs.anthropic.com/en/docs/claude-code). Track context, cost, git, and time -- or add a virtual pet.**
+**Your Claude Code session is invisible. oh-my-claude makes it visible.**
 
-[![npm version](https://img.shields.io/npm/v/@npow/oh-my-claude)](https://www.npmjs.com/package/@npow/oh-my-claude)
-[![CI](https://img.shields.io/github/actions/workflow/status/npow/oh-my-claude/ci.yml?label=CI)](https://github.com/npow/oh-my-claude/actions/workflows/ci.yml)
-[![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
-[![node](https://img.shields.io/node/v/@npow/oh-my-claude)](package.json)
+Context window filling up? You won't know until Claude gets confused. Burning $15/hour? No indicator. CI failed after your last push? Switch to a browser to find out. Dev server crashed? You'll debug for 10 minutes before noticing.
+
+oh-my-claude puts all of this in your statusline:
+
+```
+ Opus myproject main ↑2  ✓ CI  2h ago                   5h 12% ~4h30m $0.36/m
+ ▓▓▓▓▓▓▓░░░░░░░░░░░░░ 35%  ● :3000                          $1.23  15m 0s
+```
 
 ![oh-my-claude themes](screenshots/hero.gif)
 
-Claude Code has a [statusline](https://docs.anthropic.com/en/docs/claude-code/settings#statusline) pinned to the bottom of your terminal. It's blank by default. oh-my-claude fills it with context usage, cost tracking, git status, session metrics, and whatever else you want.
+## Install
 
 ```bash
 npm install -g @npow/oh-my-claude
 omc install
 ```
 
+Two commands. Takes effect immediately.
+
+87 plugins. 12 themes. Zero npm dependencies. [Write your own](#write-your-own-plugin) in minutes.
+
+[![npm version](https://img.shields.io/npm/v/@npow/oh-my-claude)](https://www.npmjs.com/package/@npow/oh-my-claude)
+[![CI](https://img.shields.io/github/actions/workflow/status/npow/oh-my-claude/ci.yml?label=CI)](https://github.com/npow/oh-my-claude/actions/workflows/ci.yml)
+[![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+
 ---
 
-## What you get
+## What can it show?
 
-Out of the box, the default theme shows:
+**Know when you're running out** -- context bar turns yellow at 60%, red at 80%:
+
+```diff
+  ▓▓▓▓▓▓░░░░░░░░░ 30%     ← green
+! ▓▓▓▓▓▓▓▓▓░░░░░░ 60%     ← yellow
+- ▓▓▓▓▓▓▓▓▓▓▓▓░░░ 80%     ← red, time to /compact
+```
+
+**Know what you're spending** -- cost rate, per-line cost, usage limits:
 
 ```
- Opus myproject main ~2 ?1                               2h ago +83 -21 15m 0s
- ▓▓▓▓▓▓▓░░░░░░░░░░░░░ 35%                                             $1.23
+$0.36/m  $4.56  3¢/line  5h 12% ~4h30m | 7d 30%
 ```
 
-Context bar changes color as it fills -- green under 60%, yellow to 80%, red above. Cost tracking warns at plan-appropriate thresholds. Git branch, status, and time since last commit update in real time.
+**Know if your stuff is working** -- dev server, CI, PR status:
 
-Switch to a different layout:
+```
+● :3000  ✓ CI  PR #42 ✓ approved  3 reviews
+```
+
+**Or just have fun** -- virtual pets, RPG stats, fortune cookies:
+
+```
+(^.^) Lv.9 STR:18 DEX:4  🔥 7d streak  🥠 "Ship it." — @chad
+```
+
+---
+
+## Themes
 
 ```bash
-omc theme analytics     # cost-rate, token-rate, efficiency, context ETA
-omc theme productivity  # clock, work/break cycle, day progress
-omc theme powerline     # Nerd Font icons and arrow separators
-omc theme minimal       # single line, text only
+omc theme <name>
 ```
 
-Or go full personality:
+| Theme | What it's for |
+|-------|---------------|
+| **default** | Clean two-line: git, context bar, cost |
+| **minimal** | Single line, text only |
+| **analytics** | Usage limits, cost rate, efficiency, context ETA |
+| **devops** | Localhost health, CI status, PR reviews, uncommitted diff |
+| **productivity** | Clock, work/break cycle, day progress |
+| **powerline** | Nerd Font icons and arrows |
+| **tamagotchi** | Virtual pet, garden, coffee, vibes |
+| **rpg** | D&D stats, speedrun, cat, horoscope |
+| **boss-battle** | Dungeon crawl, battle music |
+| **coworker** | Fake Slack messages, fortune cookies |
+| **narrator** | Third-person text adventure |
+| **danger-zone** | Everything on fire |
 
-```bash
-omc theme tamagotchi    # virtual pet, growing garden, draining coffee
-omc theme rpg           # D&D stats, speedrun timer, cat companion
-omc theme coworker      # fake Slack messages, fortune cookie wisdom
-```
+See [screenshots](#screenshots) below.
 
 ---
 
-## 12 themes
+## All 87 plugins
 
-### For working
+Everything ships in the box. Just `omc add <name>`. Plugins that need external tools hide gracefully if the tool isn't installed.
 
-| Theme | Lines | What it shows |
-|-------|-------|---------------|
-| **default** | 2 | Branch, status, last commit, context bar, cost |
-| **minimal** | 1 | Directory, branch, context %, cost. Text only. |
-| **powerline** | 2 | Nerd Font icons, arrows, tokens remaining, vim mode |
-| **analytics** | 2 | Usage limits, cost rate, efficiency, context ETA |
-| **productivity** | 2 | Clock, work/break cycle, day progress, package version |
-| **devops** | 2 | Localhost health, CI status, PR reviews, uncommitted diff |
+<details>
+<summary><strong>Usage limits & cost</strong> (19 plugins)</summary>
 
-### For fun
+| Plugin | Example | Needs |
+|--------|---------|-------|
+| `usage-limits` | `5h 12% ~4h30m \| 7d 30%` | Chrome |
+| `context-bar` | `██████░░░░░░░░░ 38%` | |
+| `context-percent` | `38%` | |
+| `context-tokens` | `84k/200k` | |
+| `context-remaining` | `115k left` | |
+| `context-eta` | `ETA 22m` | |
+| `context-level` | `↑↑` | |
+| `compact-hint` | `/compact` | |
+| `token-sparkline` | `▁▂▃▄▅▆▇█` | |
+| `session-cost` | `$2.41` | |
+| `cost-budget` | `$3.50/$10.00` | |
+| `cost-rate` | `$0.36/m` | |
+| `cost-per-line` | `3¢/line` | |
+| `cost-gauge` | `$4.56 ▅` | |
+| `tokens-per-dollar` | `18k tok/$` | |
+| `input-output-ratio` | `6.5:1 i/o` | |
+| `token-rate` | `7.2k tok/m` | |
+| `efficiency-score` | `14 L/m` | |
+| `smart-nudge` | `💡 /compact` | |
 
-| Theme | Lines | Vibe |
-|-------|-------|------|
-| **tamagotchi** | 3 | Pet, garden, coffee, vibes |
-| **boss-battle** | 3 | Dungeon crawl, battle music, weather |
-| **rpg** | 3 | D&D stats, speedrun, cat, horoscope |
-| **coworker** | 3 | Fake Slack messages, fortune cookies |
-| **narrator** | 3 | Third-person text adventure, garden, streak |
-| **danger-zone** | 3 | Everything on fire |
+</details>
 
-See [screenshots](#screenshots) for each theme in action.
+<details>
+<summary><strong>Dev environment</strong> (7 plugins)</summary>
 
----
+| Plugin | Example | Needs |
+|--------|---------|-------|
+| `localhost` | `● :3000` / `○ :3000` | |
+| `ci-status` | `✓ CI` / `✗ CI` | `gh` |
+| `github-pr` | `PR #42 ✓ approved` | `gh` |
+| `pr-reviews` | `3 reviews` | `gh` |
+| `process-watcher` | `● vite ● jest` | |
+| `log-tail` | Last error from log | |
+| `session-diff` | `3f +120 -45` | |
 
-## 87 plugins
+</details>
 
-Everything ships in the box. Script plugins that need external tools (like `gh` CLI) hide gracefully if the tool isn't installed.
-
-### Usage limits
-
-| Plugin | Example | Requires |
-|--------|---------|----------|
-| `usage-limits` | `5h 12% ~4h30m \| 7d 30% ~2d16h` | Chrome + claude.ai |
-
-Real 5-hour and 7-day utilization percentages with reset countdowns. Color-coded at thresholds.
-
-### Context & cost tracking
-
-| Plugin | Example |
-|--------|---------|
-| `context-bar` | `██████░░░░░░░░░ 38%` |
-| `context-percent` | `38%` |
-| `context-tokens` | `84k/200k` |
-| `context-remaining` | `115k left` |
-| `context-eta` | `ETA 22m` |
-| `context-level` | `↑↑` high, `→` low |
-| `compact-hint` | `/compact` at 70% |
-| `token-sparkline` | `▁▂▃▄▅▆▇█` |
-| `session-cost` | `$2.41` |
-| `cost-budget` | `$3.50/$10.00` |
-| `cost-rate` | `$0.36/m` |
-| `cost-per-line` | `3¢/line` |
-| `cost-gauge` | `$4.56 ▅` |
-| `tokens-per-dollar` | `18k tok/$` |
-| `input-output-ratio` | `6.5:1 i/o` |
-| `token-rate` | `7.2k tok/m` |
-| `efficiency-score` | `14 L/m` |
-| `smart-nudge` | `💡 /compact` at 75% |
-
-### Git
+<details>
+<summary><strong>Git</strong> (6 plugins)</summary>
 
 | Plugin | Example |
 |--------|---------|
@@ -122,7 +143,10 @@ Real 5-hour and 7-day utilization percentages with reset countdowns. Color-coded
 | `git-last-commit` | `2h ago` |
 | `git-tag` | `v1.2.3` |
 
-### Session info
+</details>
+
+<details>
+<summary><strong>Session & time</strong> (18 plugins)</summary>
 
 | Plugin | Example |
 |--------|---------|
@@ -136,269 +160,138 @@ Real 5-hour and 7-day utilization percentages with reset countdowns. Color-coded
 | `lines-gauge` | `▄ 104L` |
 | `vim-mode` | `NORMAL` |
 | `version` | `v2.1.34` |
-
-### Time
-
-| Plugin | Example |
-|--------|---------|
 | `clock` | `2:30pm` |
 | `date-display` | `Feb 20` |
 | `day-progress` | `▓▓▓▓▓░░░░░` |
 | `week-progress` | `Wed ▓▓▓░░` |
 | `year-progress` | `14% of 2026` |
 | `countdown` | `launch in 12d` |
-| `work-cycle` | `🍅 13m` / `☕ break 3m` |
+| `work-cycle` | `🍅 13m` / `☕ break` |
 | `break-reminder` | `take a break` |
 
-### Fun & personality
+</details>
+
+<details>
+<summary><strong>System</strong> (5 plugins)</summary>
+
+| Plugin | Example | Needs |
+|--------|---------|-------|
+| `spotify` | `♫ Daft Punk — Get Lucky` | macOS or `playerctl` |
+| `cpu` | `cpu 12%` | |
+| `battery` | `🔋 85%` | laptop |
+| `weather` | `⛅ 72°F` | |
+| `hackernews` | `▲847 Show HN: ...` | |
+
+</details>
+
+<details>
+<summary><strong>Fun & gamification</strong> (30 plugins)</summary>
 
 | Plugin | Example |
 |--------|---------|
 | `tamagotchi` | `(^.^)` happy, `(x_x) RIP` |
 | `cat` | `=^._.^= *sits on context window*` |
 | `vibe-check` | `vibing`, `burning cash` |
-| `fortune-cookie` | `"Weeks of coding can save hours of planning"` |
+| `fortune-cookie` | `"Weeks of coding..."` |
 | `narrator` | `The walls close in...` |
-| `soundtrack` | `lo-fi beats`, `boss battle music` |
-| `garden` | `(.)` seed → `(🌳)` tree |
-| `coffee-cup` | `[████]` → `[    ] refill?` |
+| `soundtrack` | `lo-fi beats` |
+| `garden` | `(.)` → `(🌳)` |
+| `coffee-cup` | `[████]` → `[    ]` |
 | `horoscope` | `Mercury is in retrograde.` |
-| `coworker` | `@chad: 'ship it already'` |
-| `commit-msg` | `git commit -m "feat: rewrite everything"` |
-| `weather-report` | `Clear Skies`, `Stormy` |
-| `dad-joke` | `Why do programmers prefer dark mode?` |
+| `coworker` | `@chad: 'ship it'` |
+| `commit-msg` | `git commit -m "feat: ..."` |
+| `weather-report` | `Clear Skies` / `Stormy` |
+| `dad-joke` | `Why do programmers...` |
 | `magic-8ball` | `🎱 Outlook good` |
-| `compliment` | `Your git history is a work of art` |
+| `compliment` | `Your git history is art` |
 | `mood-ring` | `💚` / `💛` / `❤️` |
-| `loading-spinner` | `⠋` (dots, line, moon) |
-
-### Gamification
-
-| Plugin | Example |
-|--------|---------|
+| `loading-spinner` | `⠋` |
 | `achievement` | `Centurion` at 100 lines |
-| `rpg-stats` | `Lv.9 STR:18 DEX:4 INT:11` |
+| `rpg-stats` | `Lv.9 STR:18 DEX:4` |
 | `xp-bar` | `Lv3 █░░░░░░░ 58xp` |
 | `level` | `Journeyman` → `Legend` |
-| `combo-meter` | `x3 SUPER`, `x5 GODLIKE` |
-| `boss-health` | `CONTEXT [████░░░░] 58%` |
-| `quest-log` | `⚔️ Survive the context limit` |
+| `combo-meter` | `x3 SUPER` |
+| `boss-health` | `CONTEXT [████░░] 58%` |
+| `quest-log` | `⚔️ Survive the limit` |
 | `loot-drop` | `🟢 Rubber Duck+1` |
 | `speedrun` | `47:00 [C]` |
 | `streak` | `🔥 7d streak` |
-| `battle-log` | `Boss Battle (85%) +892 gold` |
+| `battle-log` | `Boss Battle (85%)` |
 | `stock-ticker` | `$OMC ▲▲ $4.56` |
 | `emoji-story` | `📝✏️🏗️💰⏳` |
 
-### Dev environment
+</details>
 
-| Plugin | Example | Requires |
-|--------|---------|----------|
-| `localhost` | `● :3000` / `○ :3000` | — |
-| `ci-status` | `✓ CI` / `✗ CI` | `gh` CLI |
-| `github-pr` | `PR #42 ✓ approved` | `gh` CLI |
-| `pr-reviews` | `3 reviews` waiting | `gh` CLI |
-| `process-watcher` | `● vite ● jest` | — |
-| `log-tail` | Last error from log file | — |
-| `session-diff` | `3f uncommitted +120 -45` | git |
-
-### System
-
-| Plugin | Example | Requires |
-|--------|---------|----------|
-| `spotify` | `♫ Daft Punk — Get Lucky` | macOS or `playerctl` |
-| `cpu` | `cpu 12%` | — |
-| `battery` | `🔋 85%` / `⚡ charging` | laptop |
-| `weather` | `⛅ 72°F` | — |
-| `hackernews` | `▲847 Show HN: ...` | — |
-
-### Layout building blocks
+<details>
+<summary><strong>Layout</strong> (6 plugins)</summary>
 
 `separator-pipe` `separator-arrow` `separator-space` `flex-space` `custom-text` `output-style`
 
-Plugins that need external tools (marked in "Requires" column) hide gracefully if the tool isn't installed.
+</details>
 
 ---
 
-## Add a plugin
-
-All 87 plugins ship with oh-my-claude. Activate the ones you want:
+## Customize
 
 ```bash
-omc add spotify                          # activate a plugin
-omc add usage-limits --line 2 --left     # pick position
-omc config localhost port=8080           # configure it
-```
-
-Community plugins can be installed from any git repo:
-
-```bash
-omc install https://github.com/someone/omc-plugin-foo
-omc add foo
-```
-
-Create your own:
-
-```bash
-omc create my-plugin             # JS plugin
-omc create my-plugin --script    # Script plugin (Python, Bash, etc.)
+omc add spotify                    # add a plugin
+omc add localhost --line 2         # pick position
+omc config localhost port=8080     # configure it
+omc set 1 --left model-name git-branch --right session-cost
+omc show                           # preview your layout
+omc theme save my-setup            # save as a theme
 ```
 
 ---
 
 ## Write your own plugin
 
-### JS plugins
-
-A plugin is a single file at `~/.claude/oh-my-claude/plugins/<name>/plugin.js`:
-
 ```js
+// ~/.claude/oh-my-claude/plugins/my-plugin/plugin.js
 export const meta = {
   name: 'my-plugin',
   description: 'Shows something useful',
-  requires: [],
-  defaultConfig: {
-    style: 'cyan',
-    threshold: 50,
-  },
+  defaultConfig: { style: 'cyan' },
 };
 
 export function render(data, config) {
-  const cfg = { ...meta.defaultConfig, ...config };
-  const pct = data?.context_window?.used_percentage;
-  if (pct == null) return null;
-  return { text: `${Math.round(pct)}%`, style: pct >= cfg.threshold ? 'bold red' : cfg.style };
+  const value = data?.cost?.total_cost_usd;
+  if (value == null) return null;
+  return { text: `$${value.toFixed(2)}`, style: config.style };
 }
 ```
 
 Three rules: export `meta`, export `render`, return `{ text, style }` or `null`.
 
-### Available data fields
-
-```js
-data?.model?.display_name          // "Opus", "Sonnet"
-data?.context_window?.used_percentage   // 0-100
-data?.cost?.total_cost_usd         // 4.56
-data?.cost?.total_duration_ms      // session wall-clock time
-data?.cost?.total_lines_added      // 83
-data?.workspace?.current_dir       // "/Users/dev/myproject"
-data?.session_id                   // unique session id
-data?.vim?.mode                    // "NORMAL" if vim active
-```
-
-Full reference: [docs/plugin-contract.md](docs/plugin-contract.md)
-
-### Shell commands
-
-Use the cache layer -- raw `execSync` blocks the entire statusline:
-
-```js
-import { cachedExec } from '../../src/cache.js';
-
-export function render(data, config) {
-  const count = cachedExec('stash-count', 'git stash list | wc -l', 5000);
-  if (!count || count.trim() === '0') return null;
-  return { text: `stash:${count.trim()}`, style: 'yellow' };
-}
-```
-
-### Script plugins (Python, Bash, etc.)
-
 ```bash
-omc create my-plugin --script --lang=python
+omc create my-plugin        # scaffold it
+omc test my-plugin           # test with mock data
+omc add my-plugin            # activate it
 ```
 
-The script reads JSON on stdin and writes `{ "text": "...", "style": "..." }` to stdout:
+Script plugins work too (Python, Bash, etc.) -- `omc create my-plugin --script`.
 
-```python
-#!/usr/bin/env python3
-import json, sys
-
-data = json.load(sys.stdin)
-cost = data.get("cost", {}).get("total_cost_usd")
-if cost is None:
-    sys.exit(1)  # exit non-zero = hide plugin
-
-json.dump({"text": f"${cost:.2f}", "style": "green"}, sys.stdout)
-```
-
-### Dependencies
-
-oh-my-claude has zero npm dependencies. Plugins follow the same principle:
-
-- **JS plugins**: Node 18+ built-ins only. No npm packages.
-- **Script plugins**: can use whatever the host has (Python libs, system tools, etc.)
-
-The `meta.requires` field (e.g. `requires: ['git']`) is declarative metadata today. Automatic dependency checking is on the roadmap.
-
-### Test and add
-
-```bash
-omc test my-plugin           # run with mock data
-omc add my-plugin            # add to statusline
-omc show                     # verify layout
-```
-
-### Share it
-
-```
-omc-plugin-<name>/
-  plugin.js          # or executable `plugin` for script plugins
-  plugin.json        # optional: name, description, defaultConfig
-  README.md
-```
-
-```bash
-omc install https://github.com/<user>/omc-plugin-<name>
-```
+Full API reference: [docs/plugin-contract.md](docs/plugin-contract.md)
 
 ---
 
 ## CLI
 
-### Setup
 ```
-omc install               Interactive setup wizard
-omc uninstall             Remove from Claude Code
+omc install                  Setup wizard
+omc show                     Current layout + preview
+omc add/remove <name>        Toggle plugins on the statusline
+omc set <line>               Set a line (--left p1 p2 --right p3)
+omc theme <name>             Switch theme
+omc theme save <name>        Save current layout as theme
+omc config <name>            Show/set plugin config
+omc info <name>              Plugin details
+omc test <name>              Test a plugin with mock data
+omc list                     All plugins
+omc doctor                   Diagnose issues
+omc create <name>            Scaffold a new plugin
+omc install <url>            Install community plugin from git
 ```
-
-### Layout
-```
-omc show                  Show current layout with live preview
-omc add <name>            Add a plugin (--line N, --left)
-omc remove <name>         Remove a plugin
-omc set <line>            Set a line (--left p1 p2 --right p3 p4)
-```
-
-### Themes
-```
-omc theme <name>          Switch theme
-omc themes                List available themes
-omc theme save <name>     Save current setup as theme
-```
-
-### Plugins
-```
-omc list                  List all plugins
-omc info <name>           Plugin details and config
-omc config <name>         Show/set config (omc config weather units=f)
-omc test <name>           Test with mock data
-omc create <name>         Scaffold a new plugin
-```
-
-### Diagnostics
-```
-omc doctor                Check everything for issues
-omc validate              Plugin contract validator
-```
-
----
-
-## Claude Code skill
-
-There's a `/create-plugin` skill that builds plugins interactively. Already included at `.claude/skills/create-plugin/`.
-
-> "Create an oh-my-claude plugin that shows my current git stash count"
 
 ---
 
