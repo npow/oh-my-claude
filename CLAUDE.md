@@ -29,6 +29,12 @@ src/
     ...
 themes/
   default.json          Ships with the framework
+plugins/                Bundled script plugins (Python/Bash)
+  localhost/            Dev server health check
+  ci-status/            CI pass/fail via gh CLI
+  spotify/              Now playing track
+  usage-limits/         5h/7d usage window percentages
+  ...                   13 total
 templates/
   plugin/               Starter template for new plugins
 tests/

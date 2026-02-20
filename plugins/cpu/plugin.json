@@ -1,0 +1,13 @@
+{
+  "name": "cpu",
+  "description": "CPU usage percentage with color thresholds",
+  "cacheTtl": 5000,
+  "timeout": 5000,
+  "defaultConfig": {
+    "style": "white",
+    "styleWarn": "yellow",
+    "styleCritical": "bold red",
+    "warnAt": 70,
+    "criticalAt": 90
+  }
+}

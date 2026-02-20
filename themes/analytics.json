@@ -8,7 +8,7 @@
     },
     {
       "left": ["context-bar", "context-remaining", "context-eta"],
-      "right": ["cost-rate", "session-cost"]
+      "right": ["usage-limits", "cost-rate", "session-cost"]
     }
   ],
   "separator": " ",
@@ -65,6 +65,10 @@
       "style": "dim",
       "warnAt": 0.50,
       "styleWarn": "bold yellow"
+    },
+    "usage-limits": {
+      "style": "dim",
+      "show7d": false
     },
     "session-cost": {
       "style": "white",

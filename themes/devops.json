@@ -1,0 +1,81 @@
+{
+  "name": "devops",
+  "description": "Dev environment dashboard. Port health, CI status, PR reviews, uncommitted changes.",
+  "lines": [
+    {
+      "left": ["model-name", "directory", "git-branch", "git-ahead-behind", "ci-status"],
+      "right": ["pr-reviews", "session-diff", "session-timer"]
+    },
+    {
+      "left": ["context-bar", "usage-limits"],
+      "right": ["localhost", "session-cost"]
+    }
+  ],
+  "separator": " ",
+  "plugins": {
+    "model-name": {
+      "style": "bold cyan",
+      "icon": false
+    },
+    "directory": {
+      "style": "white",
+      "format": "basename"
+    },
+    "git-branch": {
+      "style": "green",
+      "icon": false,
+      "maxLength": 25
+    },
+    "git-ahead-behind": {
+      "style": "cyan",
+      "hideIfSynced": true
+    },
+    "ci-status": {
+      "stylePass": "green",
+      "styleFail": "bold red",
+      "stylePending": "yellow"
+    },
+    "pr-reviews": {
+      "style": "cyan",
+      "styleUrgent": "bold yellow",
+      "urgentAt": 3,
+      "hideIfZero": true
+    },
+    "session-diff": {
+      "style": "yellow",
+      "styleLarge": "bold yellow",
+      "largeAt": 500
+    },
+    "session-timer": {
+      "style": "dim"
+    },
+    "context-bar": {
+      "width": 15,
+      "charFilled": "\u2593",
+      "charEmpty": "\u2591",
+      "warnAt": 60,
+      "criticalAt": 80,
+      "showPercent": true,
+      "styleOk": "green",
+      "styleWarn": "bold yellow",
+      "styleCritical": "bold red"
+    },
+    "usage-limits": {
+      "style": "white",
+      "styleWarn": "bold yellow",
+      "styleCritical": "bold red",
+      "warnAt": 60,
+      "criticalAt": 85,
+      "show7d": true
+    },
+    "localhost": {
+      "port": 3000,
+      "styleUp": "green",
+      "styleDown": "bold red"
+    },
+    "session-cost": {
+      "style": "dim",
+      "format": "$"
+    }
+  }
+}

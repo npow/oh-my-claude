@@ -1,0 +1,12 @@
+{
+  "name": "process-watcher",
+  "description": "Shows if specific processes (vite, webpack, jest, etc.) are running",
+  "cacheTtl": 5000,
+  "timeout": 5000,
+  "defaultConfig": {
+    "processes": ["node", "vite", "webpack", "jest", "tsc"],
+    "styleUp": "green",
+    "styleDown": "dim",
+    "showDown": false
+  }
+}

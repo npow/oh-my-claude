@@ -1,0 +1,12 @@
+{
+  "name": "log-tail",
+  "description": "Shows the last error line from a log file",
+  "cacheTtl": 5000,
+  "timeout": 3000,
+  "defaultConfig": {
+    "file": "",
+    "pattern": "(?i)(error|exception|fatal|panic|fail)",
+    "maxLength": 50,
+    "style": "red"
+  }
+}

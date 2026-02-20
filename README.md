@@ -48,7 +48,7 @@ omc theme coworker      # fake Slack messages, fortune cookie wisdom
 
 ---
 
-## 11 themes
+## 12 themes
 
 ### For working
 
@@ -57,8 +57,9 @@ omc theme coworker      # fake Slack messages, fortune cookie wisdom
 | **default** | 2 | Branch, status, last commit, context bar, cost |
 | **minimal** | 1 | Directory, branch, context %, cost. Text only. |
 | **powerline** | 2 | Nerd Font icons, arrows, tokens remaining, vim mode |
-| **analytics** | 2 | Cost rate, token rate, efficiency, context ETA |
+| **analytics** | 2 | Usage limits, cost rate, efficiency, context ETA |
 | **productivity** | 2 | Clock, work/break cycle, day progress, package version |
+| **devops** | 2 | Localhost health, CI status, PR reviews, uncommitted diff |
 
 ### For fun
 
@@ -75,7 +76,17 @@ See [screenshots](#screenshots) for each theme in action.
 
 ---
 
-## 74 built-in plugins
+## 87 plugins
+
+Everything ships in the box. Script plugins that need external tools (like `gh` CLI) hide gracefully if the tool isn't installed.
+
+### Usage limits
+
+| Plugin | Example | Requires |
+|--------|---------|----------|
+| `usage-limits` | `5h 12% ~4h30m \| 7d 30% ~2d16h` | Chrome + claude.ai |
+
+Real 5-hour and 7-day utilization percentages with reset countdowns. Color-coded at thresholds.
 
 ### Context & cost tracking
 
@@ -179,87 +190,59 @@ See [screenshots](#screenshots) for each theme in action.
 | `stock-ticker` | `$OMC ▲▲ $4.56` |
 | `emoji-story` | `📝✏️🏗️💰⏳` |
 
+### Dev environment
+
+| Plugin | Example | Requires |
+|--------|---------|----------|
+| `localhost` | `● :3000` / `○ :3000` | — |
+| `ci-status` | `✓ CI` / `✗ CI` | `gh` CLI |
+| `github-pr` | `PR #42 ✓ approved` | `gh` CLI |
+| `pr-reviews` | `3 reviews` waiting | `gh` CLI |
+| `process-watcher` | `● vite ● jest` | — |
+| `log-tail` | Last error from log file | — |
+| `session-diff` | `3f uncommitted +120 -45` | git |
+
+### System
+
+| Plugin | Example | Requires |
+|--------|---------|----------|
+| `spotify` | `♫ Daft Punk — Get Lucky` | macOS or `playerctl` |
+| `cpu` | `cpu 12%` | — |
+| `battery` | `🔋 85%` / `⚡ charging` | laptop |
+| `weather` | `⛅ 72°F` | — |
+| `hackernews` | `▲847 Show HN: ...` | — |
+
 ### Layout building blocks
 
 `separator-pipe` `separator-arrow` `separator-space` `flex-space` `custom-text` `output-style`
 
----
-
-## External plugins
-
-The [omc-plugins](https://github.com/npow/omc-plugins) collection has 12 plugins that need external tools or APIs. One command installs all of them:
-
-```bash
-omc install https://github.com/npow/omc-plugins
-```
-
-They're inactive until you add them. Pick what you need:
-
-### Usage limits
-
-| Plugin | What it shows |
-|--------|--------------|
-| `usage-limits` | `5h 12% ~4h30m \| 7d 30% ~2d16h` — real rate limit percentages with reset countdowns |
-
-This is the one everyone wants. Shows your actual 5-hour and 7-day utilization from the Anthropic API. Color-coded: green → yellow at 60% → red at 85%. Requires Chrome with an active claude.ai session (macOS).
-
-### Dev environment
-
-| Plugin | What it shows |
-|--------|--------------|
-| `localhost` | `● :3000` green / `○ :3000` red — is your dev server up? |
-| `ci-status` | `✓ CI` / `✗ CI` — did your last push pass? (requires `gh`) |
-| `process-watcher` | `● vite ● jest` — are your dev tools running? |
-| `log-tail` | Last error line from a configurable log file |
-| `session-diff` | `3f uncommitted +120 -45` — nudge to commit |
-
-### GitHub
-
-| Plugin | What it shows |
-|--------|--------------|
-| `github-pr` | `PR #42 ✓ approved` — your branch's PR status (requires `gh`) |
-| `pr-reviews` | `3 reviews` — PRs waiting for your review (requires `gh`) |
-
-### System & fun
-
-| Plugin | What it shows |
-|--------|--------------|
-| `spotify` | `♫ Daft Punk — Get Lucky` (macOS / Linux) |
-| `cpu` | `cpu 12%` with color thresholds |
-| `battery` | `🔋 85%` / `⚡ charging` |
-| `weather` | `⛅ 72°F` current conditions |
-| `hackernews` | `▲847 Show HN: ...` top headline |
-
-```bash
-omc add localhost
-omc config localhost port=8080
-```
-
-Community plugins can also be installed individually from any git repo — see [Add a plugin](#add-a-plugin).
+Plugins that need external tools (marked in "Requires" column) hide gracefully if the tool isn't installed.
 
 ---
 
 ## Add a plugin
 
-Three ways:
-
-**1. Install from git:**
+All 87 plugins ship with oh-my-claude. Activate the ones you want:
 
 ```bash
-omc install https://github.com/npow/omc-plugins
-omc add spotify
+omc add spotify                          # activate a plugin
+omc add usage-limits --line 2 --left     # pick position
+omc config localhost port=8080           # configure it
 ```
 
-**2. Create with the CLI:**
+Community plugins can be installed from any git repo:
+
+```bash
+omc install https://github.com/someone/omc-plugin-foo
+omc add foo
+```
+
+Create your own:
 
 ```bash
 omc create my-plugin             # JS plugin
 omc create my-plugin --script    # Script plugin (Python, Bash, etc.)
 ```
-
-**3. Ask Claude** (if you have the [skill](#claude-code-skill) installed):
-
-> "Create an oh-my-claude plugin that shows my current CPU temperature"
 
 ---
 

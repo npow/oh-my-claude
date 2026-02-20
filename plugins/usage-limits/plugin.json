@@ -1,0 +1,20 @@
+{
+  "name": "usage-limits",
+  "description": "Shows 5-hour and 7-day usage window percentages with reset countdowns",
+  "cacheTtl": 60000,
+  "timeout": 8000,
+  "defaultConfig": {
+    "style": "white",
+    "styleWarn": "bold yellow",
+    "styleCritical": "bold red",
+    "warnAt": 60,
+    "criticalAt": 85,
+    "show7d": true
+  },
+  "requires": [
+    {
+      "name": "Chrome with claude.ai session",
+      "message": "Log into claude.ai in Chrome"
+    }
+  ]
+}

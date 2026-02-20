@@ -1,0 +1,11 @@
+{
+  "name": "weather",
+  "description": "Current weather in your statusline (via wttr.in, no API key needed)",
+  "cacheTtl": 300000,
+  "defaultConfig": {
+    "location": "",
+    "units": "f",
+    "showCity": false,
+    "style": "cyan"
+  }
+}

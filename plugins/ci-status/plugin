@@ -1,0 +1,57 @@
+#!/usr/bin/env python3
+"""ci-status — oh-my-claude plugin. Shows CI status for current branch via gh CLI."""
+
+import json
+import subprocess
+import sys
+
+
+def main():
+    try:
+        data = json.load(sys.stdin)
+    except (json.JSONDecodeError, EOFError):
+        sys.exit(1)
+
+    config = data.get("_config", {})
+    style_pass = config.get("stylePass", "green")
+    style_fail = config.get("styleFail", "bold red")
+    style_pending = config.get("stylePending", "yellow")
+
+    try:
+        result = subprocess.run(
+            ["gh", "run", "list", "--branch", "HEAD", "--limit", "1",
+             "--json", "status,conclusion,name"],
+            capture_output=True, text=True, timeout=5,
+        )
+        if result.returncode != 0:
+            sys.exit(1)
+
+        runs = json.loads(result.stdout)
+        if not runs:
+            sys.exit(1)
+
+        run = runs[0]
+        status = run.get("status", "")
+        conclusion = run.get("conclusion", "")
+        name = run.get("name", "CI")
+
+        # Truncate workflow name
+        if len(name) > 15:
+            name = name[:14] + "\u2026"
+
+        if status == "completed":
+            if conclusion == "success":
+                json.dump({"text": f"\u2713 {name}", "style": style_pass}, sys.stdout)
+            else:
+                json.dump({"text": f"\u2717 {name}", "style": style_fail}, sys.stdout)
+        elif status in ("in_progress", "queued", "waiting"):
+            json.dump({"text": f"\u25cb {name}", "style": style_pending}, sys.stdout)
+        else:
+            sys.exit(1)
+
+    except (subprocess.TimeoutExpired, FileNotFoundError, json.JSONDecodeError):
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

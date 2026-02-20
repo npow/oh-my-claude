@@ -1,0 +1,70 @@
+#!/usr/bin/env python3
+"""session-diff — oh-my-claude plugin. Shows total uncommitted diff size."""
+
+import json
+import subprocess
+import sys
+
+
+def main():
+    try:
+        data = json.load(sys.stdin)
+    except (json.JSONDecodeError, EOFError):
+        sys.exit(1)
+
+    config = data.get("_config", {})
+    style = config.get("style", "yellow")
+    style_large = config.get("styleLarge", "bold yellow")
+    large_at = config.get("largeAt", 500)
+    hide_if_clean = config.get("hideIfClean", True)
+
+    try:
+        result = subprocess.run(
+            ["git", "diff", "--shortstat"],
+            capture_output=True, text=True, timeout=3,
+        )
+        if result.returncode != 0:
+            sys.exit(1)
+
+        stat = result.stdout.strip()
+        if not stat:
+            # Also check staged changes
+            result = subprocess.run(
+                ["git", "diff", "--cached", "--shortstat"],
+                capture_output=True, text=True, timeout=3,
+            )
+            stat = result.stdout.strip()
+
+        if not stat:
+            if hide_if_clean:
+                sys.exit(1)
+            json.dump({"text": "clean", "style": "dim"}, sys.stdout)
+            return
+
+        # Parse "3 files changed, 120 insertions(+), 45 deletions(-)"
+        files = ins = dels = 0
+        for part in stat.split(","):
+            part = part.strip()
+            num = int("".join(c for c in part if c.isdigit()) or "0")
+            if "file" in part:
+                files = num
+            elif "insertion" in part:
+                ins = num
+            elif "deletion" in part:
+                dels = num
+
+        total = ins + dels
+        active_style = style_large if total >= large_at else style
+
+        text = f"uncommitted +{ins} -{dels}"
+        if files > 0:
+            text = f"{files}f {text}"
+
+        json.dump({"text": text, "style": active_style}, sys.stdout)
+
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

@@ -86,9 +86,19 @@ async function install() {
   // 4. Copy framework files
   const srcDest = join(OMC_DIR, 'src');
   const themesDest = join(OMC_DIR, 'themes');
+  const pluginsDest = join(OMC_DIR, 'plugins');
   cpSync(join(PACKAGE_ROOT, 'src'), srcDest, { recursive: true });
   cpSync(join(PACKAGE_ROOT, 'themes'), themesDest, { recursive: true });
   cpSync(join(PACKAGE_ROOT, 'package.json'), join(OMC_DIR, 'package.json'));
+  // Copy bundled script plugins (only new ones — don't overwrite user's existing plugins)
+  if (existsSync(join(PACKAGE_ROOT, 'plugins'))) {
+    for (const entry of readdirSync(join(PACKAGE_ROOT, 'plugins'))) {
+      const dest = join(pluginsDest, entry);
+      if (!existsSync(dest)) {
+        cpSync(join(PACKAGE_ROOT, 'plugins', entry), dest, { recursive: true });
+      }
+    }
+  }
 
   // 5. Write user config
   const config = {
@@ -328,6 +338,9 @@ async function addPlugin(name, args) {
     warn(`Plugin "${name}" not found.${suggestions.length ? ` Did you mean: ${suggestions.join(', ')}?` : ''}`);
     log(`${C.dim}Adding anyway — plugin may be installed later.${C.reset}`);
   }
+
+  // Check for required dependencies (from plugin.json)
+  checkPluginDeps(name);
 
   // Parse flags
   const lineFlag = args.find(a => a.startsWith('--line'));
@@ -1022,6 +1035,44 @@ function inferType(rawValue, defaultValue) {
     return rawValue;
   }
   return rawValue;
+}
+
+/**
+ * Check if a plugin's required dependencies are available.
+ * Reads plugin.json requires field and checks each command.
+ */
+function checkPluginDeps(name) {
+  // Check installed plugins dir
+  const dirs = [join(PLUGINS_DIR, name), join(PACKAGE_ROOT, 'plugins', name)];
+  for (const dir of dirs) {
+    const manifestPath = join(dir, 'plugin.json');
+    if (!existsSync(manifestPath)) continue;
+
+    try {
+      const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+      if (!Array.isArray(manifest.requires)) return;
+
+      for (const dep of manifest.requires) {
+        if (dep.command) {
+          // Check if command exists
+          try {
+            execSync(`command -v ${dep.command}`, { stdio: 'pipe', timeout: 3000 });
+          } catch {
+            const url = dep.url ? ` — install: ${dep.url}` : '';
+            if (dep.optional) {
+              log(`${C.dim}  Note: ${dep.name || dep.command} not found (optional)${url}${C.reset}`);
+            } else {
+              warn(`${name} requires "${dep.name || dep.command}"${url}`);
+              log(`${C.dim}  Plugin will hide if the dependency is not available.${C.reset}`);
+            }
+          }
+        } else if (dep.message) {
+          log(`${C.dim}  Note: ${dep.message}${C.reset}`);
+        }
+      }
+    } catch {}
+    return;
+  }
 }
 
 // ─── Config Command ─────────────────────────────

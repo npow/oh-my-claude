@@ -1,0 +1,65 @@
+#!/usr/bin/env python3
+"""hackernews — oh-my-claude plugin. Shows top Hacker News headline.
+
+Uses the public HN API (no key needed).
+"""
+
+import json
+import sys
+import urllib.request
+import urllib.error
+
+
+def main():
+    try:
+        data = json.load(sys.stdin)
+    except (json.JSONDecodeError, EOFError):
+        sys.exit(1)
+
+    config = data.get("_config", {})
+    max_len = config.get("maxLength", 50)
+    style = config.get("style", "yellow")
+    rank = config.get("rank", 1)
+
+    # Fetch top story IDs
+    try:
+        req = urllib.request.Request(
+            "https://hacker-news.firebaseio.com/v0/topstories.json",
+            headers={"User-Agent": "omc-plugin-hackernews"},
+        )
+        with urllib.request.urlopen(req, timeout=3) as resp:
+            story_ids = json.loads(resp.read())
+    except (urllib.error.URLError, OSError, json.JSONDecodeError):
+        sys.exit(1)
+
+    if not story_ids or rank < 1 or rank > len(story_ids):
+        sys.exit(1)
+
+    story_id = story_ids[rank - 1]
+
+    # Fetch story details
+    try:
+        req = urllib.request.Request(
+            f"https://hacker-news.firebaseio.com/v0/item/{story_id}.json",
+            headers={"User-Agent": "omc-plugin-hackernews"},
+        )
+        with urllib.request.urlopen(req, timeout=3) as resp:
+            story = json.loads(resp.read())
+    except (urllib.error.URLError, OSError, json.JSONDecodeError):
+        sys.exit(1)
+
+    title = story.get("title", "")
+    if not title:
+        sys.exit(1)
+
+    score = story.get("score", 0)
+    text = f"\u25b2{score} {title}"
+
+    if len(text) > max_len:
+        text = text[:max_len - 1] + "\u2026"
+
+    json.dump({"text": text, "style": style}, sys.stdout)
+
+
+if __name__ == "__main__":
+    main()

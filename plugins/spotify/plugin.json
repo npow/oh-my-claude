@@ -1,0 +1,20 @@
+{
+  "name": "spotify",
+  "description": "Now playing track from Spotify or Apple Music",
+  "cacheTtl": 5000,
+  "timeout": 5000,
+  "defaultConfig": {
+    "style": "magenta",
+    "showArtist": true,
+    "maxLength": 40,
+    "icon": "\u266b"
+  },
+  "requires": [
+    {
+      "command": "playerctl",
+      "name": "playerctl (Linux only)",
+      "url": "https://github.com/altdesktop/playerctl",
+      "optional": true
+    }
+  ]
+}

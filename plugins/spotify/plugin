@@ -1,0 +1,94 @@
+#!/usr/bin/env python3
+"""spotify — oh-my-claude plugin. Shows currently playing track.
+
+macOS: uses osascript to query Spotify/Apple Music.
+Linux: uses playerctl (install: apt install playerctl).
+"""
+
+import json
+import platform
+import subprocess
+import sys
+
+
+def get_track_macos():
+    """Query Spotify or Apple Music via AppleScript on macOS."""
+    for app in ("Spotify", "Music"):
+        try:
+            state = subprocess.run(
+                ["osascript", "-e", f'tell application "{app}" to player state as string'],
+                capture_output=True, text=True, timeout=2,
+            )
+            if state.returncode != 0 or "playing" not in state.stdout.strip().lower():
+                continue
+
+            track = subprocess.run(
+                ["osascript", "-e", f'tell application "{app}" to name of current track'],
+                capture_output=True, text=True, timeout=2,
+            ).stdout.strip()
+
+            artist = subprocess.run(
+                ["osascript", "-e", f'tell application "{app}" to artist of current track'],
+                capture_output=True, text=True, timeout=2,
+            ).stdout.strip()
+
+            if track:
+                return track, artist, app
+        except (subprocess.TimeoutExpired, FileNotFoundError):
+            continue
+    return None, None, None
+
+
+def get_track_linux():
+    """Query any MPRIS player via playerctl on Linux."""
+    try:
+        result = subprocess.run(
+            ["playerctl", "metadata", "--format", "{{artist}}\t{{title}}\t{{playerName}}"],
+            capture_output=True, text=True, timeout=2,
+        )
+        if result.returncode != 0 or not result.stdout.strip():
+            return None, None, None
+        parts = result.stdout.strip().split("\t")
+        if len(parts) >= 2:
+            return parts[1], parts[0], parts[2] if len(parts) > 2 else "player"
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        pass
+    return None, None, None
+
+
+def main():
+    try:
+        data = json.load(sys.stdin)
+    except (json.JSONDecodeError, EOFError):
+        sys.exit(1)
+
+    config = data.get("_config", {})
+    max_len = config.get("maxLength", 40)
+    show_artist = config.get("showArtist", True)
+    icon = config.get("icon", "\u266b")
+    style = config.get("style", "magenta")
+
+    system = platform.system()
+    if system == "Darwin":
+        track, artist, _ = get_track_macos()
+    elif system == "Linux":
+        track, artist, _ = get_track_linux()
+    else:
+        sys.exit(1)
+
+    if not track:
+        sys.exit(1)
+
+    if show_artist and artist:
+        text = f"{icon} {artist} \u2014 {track}"
+    else:
+        text = f"{icon} {track}"
+
+    if len(text) > max_len:
+        text = text[:max_len - 1] + "\u2026"
+
+    json.dump({"text": text, "style": style}, sys.stdout)
+
+
+if __name__ == "__main__":
+    main()

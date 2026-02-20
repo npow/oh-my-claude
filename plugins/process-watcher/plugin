@@ -1,0 +1,51 @@
+#!/usr/bin/env python3
+"""process-watcher — oh-my-claude plugin. Shows if specific processes are running."""
+
+import json
+import subprocess
+import sys
+
+
+def is_running(name):
+    try:
+        result = subprocess.run(
+            ["pgrep", "-f", name],
+            capture_output=True, timeout=2,
+        )
+        return result.returncode == 0
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        return False
+
+
+def main():
+    try:
+        data = json.load(sys.stdin)
+    except (json.JSONDecodeError, EOFError):
+        sys.exit(1)
+
+    config = data.get("_config", {})
+    processes = config.get("processes", ["node", "vite", "webpack", "jest", "tsc"])
+    style_up = config.get("styleUp", "green")
+    style_down = config.get("styleDown", "dim")
+    show_down = config.get("showDown", False)
+
+    parts = []
+    for proc in processes:
+        up = is_running(proc)
+        if up:
+            parts.append(f"\u25cf {proc}")
+        elif show_down:
+            parts.append(f"\u25cb {proc}")
+
+    if not parts:
+        sys.exit(1)
+
+    # Check if any are up
+    has_up = any(is_running(p) for p in processes)
+    style = style_up if has_up else style_down
+
+    json.dump({"text": " ".join(parts), "style": style}, sys.stdout)
+
+
+if __name__ == "__main__":
+    main()

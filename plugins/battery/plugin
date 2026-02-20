@@ -1,0 +1,95 @@
+#!/usr/bin/env python3
+"""battery — oh-my-claude plugin. Shows battery percentage and charging status.
+
+macOS: uses pmset.
+Linux: reads /sys/class/power_supply/.
+"""
+
+import json
+import platform
+import subprocess
+import sys
+from pathlib import Path
+
+
+def get_battery_macos():
+    try:
+        result = subprocess.run(
+            ["pmset", "-g", "batt"],
+            capture_output=True, text=True, timeout=2,
+        )
+        if result.returncode != 0:
+            return None, False
+
+        for line in result.stdout.splitlines():
+            if "%" in line:
+                # Extract percentage
+                for part in line.split():
+                    if part.endswith("%;"):
+                        pct = int(part.rstrip("%;"))
+                        charging = "charging" in line.lower() or "ac power" in result.stdout.lower()
+                        return pct, charging
+    except (subprocess.TimeoutExpired, FileNotFoundError, ValueError):
+        pass
+    return None, False
+
+
+def get_battery_linux():
+    bat_path = Path("/sys/class/power_supply")
+    if not bat_path.exists():
+        return None, False
+
+    for entry in bat_path.iterdir():
+        if not entry.name.startswith("BAT"):
+            continue
+        try:
+            capacity = int((entry / "capacity").read_text().strip())
+            status = (entry / "status").read_text().strip().lower()
+            charging = status in ("charging", "full")
+            return capacity, charging
+        except (FileNotFoundError, ValueError):
+            continue
+    return None, False
+
+
+def main():
+    try:
+        data = json.load(sys.stdin)
+    except (json.JSONDecodeError, EOFError):
+        sys.exit(1)
+
+    config = data.get("_config", {})
+    style = config.get("style", "white")
+    style_low = config.get("styleLow", "bold red")
+    style_charging = config.get("styleCharging", "green")
+    low_threshold = config.get("lowThreshold", 20)
+
+    system = platform.system()
+    if system == "Darwin":
+        pct, charging = get_battery_macos()
+    elif system == "Linux":
+        pct, charging = get_battery_linux()
+    else:
+        sys.exit(1)
+
+    if pct is None:
+        sys.exit(1)
+
+    if charging:
+        icon = "\u26a1"
+        active_style = style_charging
+    elif pct <= low_threshold:
+        icon = "\U0001faab"
+        active_style = style_low
+    elif pct <= 50:
+        icon = "\U0001f50b"
+        active_style = style
+    else:
+        icon = "\U0001f50b"
+        active_style = style
+
+    json.dump({"text": f"{icon} {pct}%", "style": active_style}, sys.stdout)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,263 @@
+#!/usr/bin/env python3
+"""usage-limits — oh-my-claude plugin. Shows 5-hour and 7-day usage window percentages.
+
+Extracts sessionKey and orgId from Chrome cookies on macOS.
+Calls claude.ai usage API to get real utilization percentages.
+
+Requires: Chrome with an active claude.ai session. macOS only.
+Based on the approach from github.com/victorstein/claude-code-usage-statusline.
+"""
+
+import hashlib
+import json
+import os
+import shutil
+import sqlite3
+import subprocess
+import sys
+import tempfile
+import urllib.request
+import urllib.error
+
+API_BASE = "https://claude.ai/api/organizations"
+CHROME_BASE = os.path.expanduser("~/Library/Application Support/Google/Chrome")
+SUBPROCESS_TIMEOUT = 5
+
+
+def get_chrome_encryption_key():
+    """Get Chrome's cookie decryption key from macOS Keychain."""
+    try:
+        result = subprocess.run(
+            ["security", "find-generic-password", "-w", "-s", "Chrome Safe Storage", "-a", "Chrome"],
+            capture_output=True, text=True, timeout=SUBPROCESS_TIMEOUT,
+        )
+        if result.returncode != 0 or not result.stdout.strip():
+            return None
+        password = result.stdout.strip()
+        return hashlib.pbkdf2_hmac("sha1", password.encode("utf-8"), b"saltysalt", 1003, dklen=16)
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        return None
+
+
+def decrypt_cookie(encrypted_value, key, db_version):
+    """Decrypt a Chrome cookie value using openssl."""
+    if not encrypted_value or len(encrypted_value) < 4:
+        return ""
+    prefix = encrypted_value[:3]
+    if prefix not in (b"v10", b"v11"):
+        return ""
+
+    ciphertext = encrypted_value[3:]
+    hex_key = key.hex()
+    hex_iv = "20" * 16  # 16 spaces
+
+    try:
+        result = subprocess.run(
+            ["openssl", "enc", "-d", "-aes-128-cbc", "-K", hex_key, "-iv", hex_iv, "-nopad"],
+            input=ciphertext, capture_output=True, timeout=SUBPROCESS_TIMEOUT,
+        )
+        if result.returncode != 0:
+            return ""
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        return ""
+
+    decrypted = result.stdout
+    if not decrypted:
+        return ""
+
+    # Strip PKCS7 padding
+    pad_len = decrypted[-1]
+    if 1 <= pad_len <= 16 and all(b == pad_len for b in decrypted[-pad_len:]):
+        decrypted = decrypted[:-pad_len]
+
+    # Chrome 130+ (DB version >= 24): skip 32-byte SHA256 prefix
+    if db_version >= 24 and len(decrypted) > 32:
+        decrypted = decrypted[32:]
+
+    try:
+        return decrypted.decode("utf-8")
+    except UnicodeDecodeError:
+        return ""
+
+
+def extract_chrome_cookies():
+    """Extract sessionKey and orgId from Chrome's cookie database.
+    Searches all Chrome profiles."""
+    if not os.path.isdir(CHROME_BASE):
+        return None, None
+
+    key = get_chrome_encryption_key()
+    if not key:
+        return None, None
+
+    # Discover profiles
+    profiles = ["Default"]
+    try:
+        for entry in os.listdir(CHROME_BASE):
+            if entry.startswith("Profile "):
+                profiles.append(entry)
+    except OSError:
+        pass
+
+    for profile in profiles:
+        cookies_path = os.path.join(CHROME_BASE, profile, "Cookies")
+        if not os.path.exists(cookies_path):
+            continue
+
+        tmp_fd, tmp_path = tempfile.mkstemp(suffix=".db")
+        os.close(tmp_fd)
+        try:
+            shutil.copy2(cookies_path, tmp_path)
+            # Also copy WAL/SHM files for consistency
+            for ext in ("-wal", "-shm"):
+                src = cookies_path + ext
+                if os.path.exists(src):
+                    shutil.copy2(src, tmp_path + ext)
+
+            conn = sqlite3.connect(tmp_path)
+            try:
+                # Get DB version for Chrome 130+ handling
+                db_version = 0
+                try:
+                    row = conn.execute("SELECT value FROM meta WHERE key='version'").fetchone()
+                    if row:
+                        db_version = int(row[0])
+                except Exception:
+                    pass
+
+                rows = conn.execute(
+                    "SELECT name, encrypted_value FROM cookies "
+                    "WHERE host_key IN ('.claude.ai', 'claude.ai') "
+                    "AND name IN ('sessionKey', 'lastActiveOrg')"
+                ).fetchall()
+            finally:
+                conn.close()
+
+            session_key = None
+            org_id = None
+            for name, encrypted_value in rows:
+                decrypted = decrypt_cookie(encrypted_value, key, db_version)
+                if not decrypted:
+                    continue
+                if name == "sessionKey":
+                    session_key = decrypted
+                elif name == "lastActiveOrg":
+                    org_id = decrypted
+
+            if session_key and org_id:
+                return session_key, org_id
+        except Exception:
+            continue
+        finally:
+            for ext in ("", "-wal", "-shm"):
+                try:
+                    os.unlink(tmp_path + ext)
+                except OSError:
+                    pass
+
+    return None, None
+
+
+def fetch_usage(session_key, org_id):
+    """Call the claude.ai usage API."""
+    url = f"{API_BASE}/{org_id}/usage"
+    try:
+        req = urllib.request.Request(url, headers={
+            "Cookie": f"sessionKey={session_key}",
+            "Accept": "application/json",
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                          "AppleWebKit/537.36 (KHTML, like Gecko) "
+                          "Chrome/131.0.0.0 Safari/537.36",
+            "Referer": "https://claude.ai/",
+            "Origin": "https://claude.ai",
+        })
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            return json.loads(resp.read())
+    except (urllib.error.URLError, urllib.error.HTTPError, OSError, json.JSONDecodeError):
+        return None
+
+
+def format_remaining(iso_str):
+    """Convert ISO reset time to human-readable countdown."""
+    if not iso_str:
+        return ""
+    try:
+        from datetime import datetime, timezone
+        reset = datetime.fromisoformat(iso_str.replace("Z", "+00:00"))
+        now = datetime.now(timezone.utc)
+        total_secs = int((reset - now).total_seconds())
+        if total_secs <= 0:
+            return "now"
+        if total_secs < 3600:
+            return f"{total_secs // 60}m"
+        hours = total_secs // 3600
+        mins = (total_secs % 3600) // 60
+        if hours >= 24:
+            return f"{hours // 24}d{hours % 24}h"
+        return f"{hours}h{mins}m"
+    except (ValueError, TypeError):
+        return ""
+
+
+def main():
+    try:
+        data = json.load(sys.stdin)
+    except (json.JSONDecodeError, EOFError):
+        sys.exit(1)
+
+    config = data.get("_config", {})
+    style = config.get("style", "white")
+    style_warn = config.get("styleWarn", "bold yellow")
+    style_critical = config.get("styleCritical", "bold red")
+    warn_at = config.get("warnAt", 60)
+    critical_at = config.get("criticalAt", 85)
+    show_7d = config.get("show7d", True)
+
+    session_key, org_id = extract_chrome_cookies()
+    if not session_key or not org_id:
+        sys.exit(1)
+
+    usage = fetch_usage(session_key, org_id)
+    if not usage:
+        sys.exit(1)
+
+    five_hour = usage.get("five_hour", {})
+    five_pct = five_hour.get("utilization")
+    if five_pct is None:
+        sys.exit(1)
+
+    five_pct_num = round(five_pct * 100) if five_pct <= 1 else round(five_pct)
+    five_remaining = format_remaining(five_hour.get("resets_at", ""))
+
+    if five_pct_num >= critical_at:
+        active_style = style_critical
+    elif five_pct_num >= warn_at:
+        active_style = style_warn
+    else:
+        active_style = style
+
+    parts = [f"5h {five_pct_num}%"]
+    if five_remaining:
+        parts[0] += f" ~{five_remaining}"
+
+    if show_7d:
+        seven_day = usage.get("seven_day", {})
+        seven_pct = seven_day.get("utilization")
+        if seven_pct is not None:
+            seven_pct_num = round(seven_pct * 100) if seven_pct <= 1 else round(seven_pct)
+            seven_remaining = format_remaining(seven_day.get("resets_at", ""))
+            part = f"7d {seven_pct_num}%"
+            if seven_remaining:
+                part += f" ~{seven_remaining}"
+            parts.append(part)
+
+            if seven_pct_num >= critical_at:
+                active_style = style_critical
+            elif seven_pct_num >= warn_at and active_style != style_critical:
+                active_style = style_warn
+
+    json.dump({"text": " | ".join(parts), "style": active_style}, sys.stdout)
+
+
+if __name__ == "__main__":
+    main()

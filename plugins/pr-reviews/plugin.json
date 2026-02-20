@@ -1,0 +1,19 @@
+{
+  "name": "pr-reviews",
+  "description": "Number of PRs waiting for your review",
+  "cacheTtl": 120000,
+  "timeout": 8000,
+  "defaultConfig": {
+    "style": "cyan",
+    "styleUrgent": "bold yellow",
+    "urgentAt": 3,
+    "hideIfZero": true
+  },
+  "requires": [
+    {
+      "command": "gh",
+      "name": "GitHub CLI",
+      "url": "https://cli.github.com"
+    }
+  ]
+}

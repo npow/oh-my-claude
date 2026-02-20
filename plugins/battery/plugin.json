@@ -1,0 +1,12 @@
+{
+  "name": "battery",
+  "description": "Battery percentage and charging status",
+  "cacheTtl": 30000,
+  "timeout": 3000,
+  "defaultConfig": {
+    "style": "white",
+    "styleLow": "bold red",
+    "styleCharging": "green",
+    "lowThreshold": 20
+  }
+}

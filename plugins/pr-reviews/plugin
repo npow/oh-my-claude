@@ -1,0 +1,48 @@
+#!/usr/bin/env python3
+"""pr-reviews — oh-my-claude plugin. Shows PRs waiting for your review via gh CLI."""
+
+import json
+import subprocess
+import sys
+
+
+def main():
+    try:
+        data = json.load(sys.stdin)
+    except (json.JSONDecodeError, EOFError):
+        sys.exit(1)
+
+    config = data.get("_config", {})
+    style = config.get("style", "cyan")
+    style_urgent = config.get("styleUrgent", "bold yellow")
+    urgent_at = config.get("urgentAt", 3)
+    hide_if_zero = config.get("hideIfZero", True)
+
+    try:
+        result = subprocess.run(
+            ["gh", "pr", "list", "--search", "review-requested:@me",
+             "--json", "number", "--limit", "20"],
+            capture_output=True, text=True, timeout=5,
+        )
+        if result.returncode != 0:
+            sys.exit(1)
+
+        prs = json.loads(result.stdout)
+        count = len(prs)
+
+        if count == 0 and hide_if_zero:
+            sys.exit(1)
+
+        if count == 0:
+            json.dump({"text": "0 reviews", "style": style}, sys.stdout)
+        else:
+            active_style = style_urgent if count >= urgent_at else style
+            label = "review" if count == 1 else "reviews"
+            json.dump({"text": f"{count} {label}", "style": active_style}, sys.stdout)
+
+    except (subprocess.TimeoutExpired, FileNotFoundError, json.JSONDecodeError):
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

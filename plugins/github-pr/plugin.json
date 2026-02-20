@@ -1,0 +1,19 @@
+{
+  "name": "github-pr",
+  "description": "PR review status for the current branch via gh CLI",
+  "cacheTtl": 60000,
+  "timeout": 6000,
+  "defaultConfig": {
+    "style": "cyan",
+    "styleApproved": "green",
+    "styleChangesRequested": "yellow",
+    "showDiff": false
+  },
+  "requires": [
+    {
+      "command": "gh",
+      "name": "GitHub CLI",
+      "url": "https://cli.github.com"
+    }
+  ]
+}

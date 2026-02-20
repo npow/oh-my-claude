@@ -1,0 +1,11 @@
+{
+  "name": "hackernews",
+  "description": "Top Hacker News headline in your statusline",
+  "cacheTtl": 300000,
+  "timeout": 8000,
+  "defaultConfig": {
+    "style": "yellow",
+    "maxLength": 50,
+    "rank": 1
+  }
+}

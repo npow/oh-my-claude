@@ -1,0 +1,12 @@
+{
+  "name": "session-diff",
+  "description": "Shows total size of uncommitted changes (files, insertions, deletions)",
+  "cacheTtl": 10000,
+  "timeout": 5000,
+  "defaultConfig": {
+    "style": "yellow",
+    "styleLarge": "bold yellow",
+    "largeAt": 500,
+    "hideIfClean": true
+  }
+}

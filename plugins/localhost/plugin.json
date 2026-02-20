@@ -1,0 +1,14 @@
+{
+  "name": "localhost",
+  "description": "Shows if a local port is up or down",
+  "cacheTtl": 5000,
+  "timeout": 3000,
+  "defaultConfig": {
+    "port": 3000,
+    "host": "127.0.0.1",
+    "timeout": 0.5,
+    "label": "",
+    "styleUp": "green",
+    "styleDown": "bold red"
+  }
+}

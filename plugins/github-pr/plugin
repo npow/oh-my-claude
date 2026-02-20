@@ -1,0 +1,74 @@
+#!/usr/bin/env python3
+"""github-pr — oh-my-claude plugin. Shows PR status for current branch.
+
+Requires: gh CLI (authenticated).
+"""
+
+import json
+import subprocess
+import sys
+
+
+def main():
+    try:
+        data = json.load(sys.stdin)
+    except (json.JSONDecodeError, EOFError):
+        sys.exit(1)
+
+    config = data.get("_config", {})
+    style = config.get("style", "cyan")
+    style_approved = config.get("styleApproved", "green")
+    style_changes = config.get("styleChangesRequested", "yellow")
+
+    # Get current branch PR info
+    try:
+        result = subprocess.run(
+            [
+                "gh", "pr", "view", "--json",
+                "number,title,reviewDecision,additions,deletions,isDraft",
+            ],
+            capture_output=True, text=True, timeout=5,
+        )
+        if result.returncode != 0:
+            sys.exit(1)
+
+        pr = json.loads(result.stdout)
+    except (subprocess.TimeoutExpired, FileNotFoundError, json.JSONDecodeError):
+        sys.exit(1)
+
+    number = pr.get("number")
+    if not number:
+        sys.exit(1)
+
+    decision = pr.get("reviewDecision", "")
+    is_draft = pr.get("isDraft", False)
+    additions = pr.get("additions", 0)
+    deletions = pr.get("deletions", 0)
+
+    # Build status indicator
+    if is_draft:
+        status = "draft"
+        active_style = style
+    elif decision == "APPROVED":
+        status = "\u2713 approved"
+        active_style = style_approved
+    elif decision == "CHANGES_REQUESTED":
+        status = "\u2717 changes"
+        active_style = style_changes
+    elif decision == "REVIEW_REQUIRED":
+        status = "review needed"
+        active_style = style
+    else:
+        status = "open"
+        active_style = style
+
+    text = f"PR #{number} {status}"
+
+    if config.get("showDiff", False):
+        text += f" +{additions} -{deletions}"
+
+    json.dump({"text": text, "style": active_style}, sys.stdout)
+
+
+if __name__ == "__main__":
+    main()

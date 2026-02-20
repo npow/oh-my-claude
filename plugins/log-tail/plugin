@@ -1,0 +1,62 @@
+#!/usr/bin/env python3
+"""log-tail — oh-my-claude plugin. Shows the last error from a log file."""
+
+import json
+import os
+import re
+import sys
+
+
+def main():
+    try:
+        data = json.load(sys.stdin)
+    except (json.JSONDecodeError, EOFError):
+        sys.exit(1)
+
+    config = data.get("_config", {})
+    log_file = config.get("file", "")
+    pattern = config.get("pattern", r"(?i)(error|exception|fatal|panic|fail)")
+    max_len = config.get("maxLength", 50)
+    style = config.get("style", "red")
+
+    if not log_file:
+        sys.exit(1)
+
+    # Expand ~ and env vars
+    log_file = os.path.expanduser(os.path.expandvars(log_file))
+
+    if not os.path.isfile(log_file):
+        sys.exit(1)
+
+    # Read last 100 lines efficiently
+    try:
+        with open(log_file, "r") as f:
+            # Seek to end, then back up
+            f.seek(0, 2)
+            size = f.tell()
+            # Read last ~10KB
+            read_size = min(size, 10240)
+            f.seek(max(0, size - read_size))
+            lines = f.read().splitlines()
+    except (OSError, IOError):
+        sys.exit(1)
+
+    # Find last matching line
+    regex = re.compile(pattern)
+    match_line = None
+    for line in reversed(lines):
+        if regex.search(line):
+            match_line = line.strip()
+            break
+
+    if not match_line:
+        sys.exit(1)
+
+    if len(match_line) > max_len:
+        match_line = match_line[:max_len - 1] + "\u2026"
+
+    json.dump({"text": match_line, "style": style}, sys.stdout)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,18 @@
+{
+  "name": "ci-status",
+  "description": "CI pass/fail status for current branch via gh CLI",
+  "cacheTtl": 60000,
+  "timeout": 8000,
+  "defaultConfig": {
+    "stylePass": "green",
+    "styleFail": "bold red",
+    "stylePending": "yellow"
+  },
+  "requires": [
+    {
+      "command": "gh",
+      "name": "GitHub CLI",
+      "url": "https://cli.github.com"
+    }
+  ]
+}
