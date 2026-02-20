@@ -3,7 +3,7 @@
 
 import { openSync, closeSync } from 'fs';
 import { execFileSync } from 'child_process';
-import { stylize, stripAnsi } from './color.js';
+import { stylize, stringWidth } from './color.js';
 
 /**
  * Detect terminal width.
@@ -81,7 +81,7 @@ function renderSide(parts, separator) {
 
   const sep = separator || ' | ';
   const rendered = styledParts.join(sep);
-  const plainLength = stripAnsi(rendered).length;
+  const plainLength = stringWidth(rendered);
 
   return { rendered, plainLength };
 }
@@ -97,7 +97,8 @@ function renderSide(parts, separator) {
 export function compose(lines, terminalWidth, separator) {
   if (!lines || !Array.isArray(lines) || lines.length === 0) return '';
 
-  const width = terminalWidth || detectWidth();
+  // Subtract margin for Claude Code's own statusline content ("1,048,576 tokens" etc.)
+  const width = (terminalWidth || detectWidth()) - 25;
   const sep = separator || ' | ';
   const outputLines = [];
 
@@ -153,22 +154,23 @@ export function compose(lines, terminalWidth, separator) {
 }
 
 /**
- * Truncate an ANSI-styled string to a given visible character count.
- * Preserves ANSI codes but cuts visible characters.
+ * Truncate an ANSI-styled string to a given visible column width.
+ * Preserves ANSI codes but cuts visible characters. Accounts for
+ * double-width characters (emoji, CJK).
  *
  * @param {string} str - ANSI-styled string
- * @param {number} maxVisible - Maximum visible character count
+ * @param {number} maxWidth - Maximum visible column width
  * @returns {string} Truncated string
  */
-function truncateAnsi(str, maxVisible) {
+function truncateAnsi(str, maxWidth) {
   if (!str) return '';
-  if (maxVisible <= 0) return '';
+  if (maxWidth <= 0) return '';
 
-  let visible = 0;
+  let width = 0;
   let result = '';
   let i = 0;
 
-  while (i < str.length && visible < maxVisible) {
+  while (i < str.length && width < maxWidth) {
     // Check for ANSI escape sequence
     if (str[i] === '\x1b' && str[i + 1] === '[') {
       // Find end of CSI sequence (ends at a letter)
@@ -178,9 +180,13 @@ function truncateAnsi(str, maxVisible) {
       result += str.slice(i, j);
       i = j;
     } else {
-      result += str[i];
-      visible++;
-      i++;
+      const cp = str.codePointAt(i);
+      const charWidth = stringWidth(String.fromCodePoint(cp));
+      if (width + charWidth > maxWidth) break;
+      result += String.fromCodePoint(cp);
+      width += charWidth;
+      // Advance past surrogate pair if needed
+      i += cp > 0xFFFF ? 2 : 1;
     }
   }
 
