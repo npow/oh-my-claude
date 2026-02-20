@@ -109,13 +109,71 @@ Run `npm run showcase` to see all themes live in your terminal.
 
 ---
 
-## 41 plugins, mix and match
+## 74 plugins, mix and match
+
+### Stay productive
+
+| Plugin | What it shows | Example |
+|---------|---------------|---------|
+| `context-bar` | Visual context progress bar | `██████░░░░░░░░░ 38%` |
+| `context-percent` | Context usage as number | `38%` |
+| `context-tokens` | Token count used/total | `84k/200k` |
+| `context-remaining` | Tokens left in context | `115k left` |
+| `context-eta` | Time until context is full | `ETA 22m` |
+| `compact-hint` | Suggests /compact at threshold | `/compact` |
+| `token-sparkline` | Context history sparkline | `▁▂▃▄▅▆▇█` |
+| `trend-arrow` | Context usage trend | `↑↑` rising, `→` flat |
+| `session-cost` | Session cost in USD | `$2.41` |
+| `cost-budget` | Cost vs budget | `$3.50/$10.00` |
+| `cost-rate` | Dollars per minute burn rate | `$0.36/m` |
+| `cost-per-line` | Cost per line of code | `3¢/line` |
+| `cost-sparkline` | Cost as sparkline bar | `$4.56 ▅` |
+| `tokens-per-dollar` | Token efficiency | `18k tok/$` |
+| `input-output-ratio` | Input vs output tokens | `6.5:1 i/o` |
+| `token-rate` | Token consumption per minute | `7.2k tok/m` |
+| `efficiency-score` | Lines per API minute | `14 L/m` |
+| `model-name` | Current model | `Opus` |
+| `session-timer` | Session duration | `25m 0s` |
+| `api-timer` | API wait time | `api 3m 40s` |
+| `idle-timer` | Time spent thinking | `idle 9m 30s` |
+| `lines-changed` | Lines added/removed | `+250 -23` |
+| `lines-sparkline` | Lines changed as sparkline | `▄ 104L` |
+| `smart-nudge` | Contextual suggestions | `💡 /compact` at 75% |
+| `directory` | Working directory | `myproject` |
+| `package-version` | Version from package.json | `v0.3.1` |
+| `vim-mode` | Vim mode indicator | `NORMAL` |
+| `version` | Claude Code version | `v2.1.34` |
+| `output-style` | Active output style | `streamlined` |
+
+### Git
+
+| Plugin | What it shows | Example |
+|---------|---------------|---------|
+| `git-branch` | Current branch | `main` |
+| `git-status` | Staged, modified, untracked | `+2 ~1 ?3` |
+| `git-stash` | Stash count | `stash:3` |
+| `git-ahead-behind` | Commits ahead/behind remote | `↑2 ↓1` |
+| `git-last-commit` | Time since last commit | `2h ago` |
+| `git-tag` | Current/nearest tag | `v1.2.3` |
+
+### Time
+
+| Plugin | What it shows | Example |
+|---------|---------------|---------|
+| `clock` | Current time | `2:30pm` |
+| `date-display` | Today's date | `Feb 20` |
+| `day-progress` | Workday progress bar | `▓▓▓▓▓░░░░░` |
+| `week-progress` | Workweek progress | `Wed ▓▓▓░░` |
+| `year-progress` | Year percentage | `14% of 2026` |
+| `countdown` | Days until target date | `launch in 12d` |
+| `pomodoro` | Pomodoro timer | `🍅 13m` work, `☕ break 3m` |
+| `break-reminder` | Break reminder | `take a break` after 60m |
 
 ### Have fun while you wait
 
 | Plugin | What it does | Example |
 |---------|--------------|---------|
-| `tamagotchi` | Virtual pet reacts to your session | `(^.^)` happy, `(x_x) RIP` at 95% context |
+| `tamagotchi` | Virtual pet reacts to your session | `(^.^)` happy, `(x_x) RIP` at 95% |
 | `cat` | A cat doing cat things | `=^._.^= *sits on context window*` |
 | `vibe-check` | One-word session mood | `vibing`, `cooking`, `burning cash` |
 | `fortune-cookie` | Rotating developer wisdom | `"Weeks of coding can save hours of planning"` |
@@ -125,8 +183,13 @@ Run `npm run showcase` to see all themes live in your terminal.
 | `coffee-cup` | Drains over a 2-hour session | `[████]` full to `[    ] refill?` |
 | `horoscope` | Daily coding horoscope | `Mercury is in retrograde. Avoid force-pushing.` |
 | `coworker` | Fake Slack reactions | `@chad: 'ship it already'` |
-| `commit-msg` | Suggested commit message | `git commit -m "feat: rewrite the entire codebase"` |
-| `weather-report` | Session as weather forecast | `Clear Skies`, `Stormy` at 85% context |
+| `commit-msg` | Suggested commit message | `git commit -m "feat: rewrite everything"` |
+| `weather-report` | Session as weather forecast | `Clear Skies`, `Stormy` at 85% |
+| `dad-joke` | Rotating developer dad jokes | `Why do programmers prefer dark mode?` |
+| `magic-8ball` | Periodic predictions | `🎱 Outlook good` |
+| `compliment` | Rotating encouragement | `Your git history is a work of art` |
+| `mood-ring` | Color-coded session health | `💚` green, `💛` yellow, `❤️` red |
+| `loading-spinner` | Animated spinner | `⠋` (dots, line, moon styles) |
 
 ### Gamify your session
 
@@ -134,32 +197,17 @@ Run `npm run showcase` to see all themes live in your terminal.
 |---------|--------------|---------|
 | `achievement` | Unlockable badges | `Centurion` at 100 lines, `Whale` at $20 |
 | `rpg-stats` | D&D character sheet | `Lv.9 STR:18 DEX:4 INT:11 WIS:18 CHA:0` |
+| `xp-bar` | XP progress bar | `Lv3 █░░░░░░░ 58xp` |
+| `level` | Title based on session progress | `Journeyman`, `Expert`, `Legend` |
+| `combo-meter` | Activity intensity | `x3 SUPER`, `x5 GODLIKE` |
+| `boss-health` | Context as boss HP | `CONTEXT [████████░░░░] 58%` |
+| `quest-log` | Current quest objective | `⚔️ Quest: Survive the context limit` |
+| `loot-drop` | Random drops at milestones | `🟢 Rubber Duck+1`, `🟡 Golden Commit` |
 | `speedrun` | Timer + efficiency rating | `47:00 [C]` |
 | `streak` | Consecutive-day streak | `🔥 7d streak` |
 | `battle-log` | Session as dungeon crawl | `Boss Battle (85%) +892 gold` |
 | `stock-ticker` | Cost as stock price | `$OMC ▲▲ $4.56` |
 | `emoji-story` | Growing emoji narrative | `📝✏️🏗️💰⏳` |
-
-### Stay productive
-
-| Plugin | What it shows | Example |
-|---------|---------------|---------|
-| `context-bar` | Visual context progress bar | `██████░░░░░░░░░ 38%` |
-| `context-percent` | Context usage as number | `38%` |
-| `context-tokens` | Token count used/total | `84k/200k` |
-| `session-cost` | Session cost in USD | `$2.41` |
-| `cost-budget` | Cost vs budget | `$3.50/$10.00` |
-| `git-branch` | Current branch | `main` |
-| `git-status` | Staged, modified, untracked | `+2 ~1 ?3` |
-| `lines-changed` | Lines added/removed | `+250 -23` |
-| `smart-nudge` | Contextual suggestions | `💡 /compact` at 75%, `💡 commit?` at 100 lines |
-| `token-sparkline` | Context history sparkline | `▁▂▃▄▅▆▇█` |
-| `model-name` | Current model | `Opus` |
-| `directory` | Working directory | `myproject` |
-| `session-timer` | Session duration | `25m 0s` |
-| `api-timer` | API wait time | `api 3m 40s` |
-| `vim-mode` | Vim mode indicator | `NORMAL` |
-| `version` | Claude Code version | `v2.1.34` |
 
 ### Layout building blocks
 
@@ -170,7 +218,6 @@ Run `npm run showcase` to see all themes live in your terminal.
 | `separator-space` | Whitespace |
 | `flex-space` | Right-alignment marker |
 | `custom-text` | Static text string |
-| `output-style` | Active output style |
 
 ---
 
@@ -427,7 +474,7 @@ omc theme save <name>     Save your current setup as a reusable theme
 ### Plugins
 
 ```
-omc list                  List all 41 built-in + installed plugins
+omc list                  List all built-in + installed plugins
 omc info <name>           Show plugin details, config, statusline location
 omc config <name>         Show/set plugin config values
                             omc config weather units=f refresh=30

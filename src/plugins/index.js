@@ -42,6 +42,49 @@ import * as emojiStory from './emoji-story.js';
 import * as speedrun from './speedrun.js';
 import * as stockTicker from './stock-ticker.js';
 import * as rpgStats from './rpg-stats.js';
+// New: context & token management
+import * as contextRemaining from './context-remaining.js';
+import * as contextEta from './context-eta.js';
+import * as compactHint from './compact-hint.js';
+import * as inputOutputRatio from './input-output-ratio.js';
+import * as tokenRate from './token-rate.js';
+import * as costRate from './cost-rate.js';
+import * as costPerLine from './cost-per-line.js';
+import * as tokensPerDollar from './tokens-per-dollar.js';
+import * as efficiencyScore from './efficiency-score.js';
+import * as idleTimer from './idle-timer.js';
+// New: time & productivity
+import * as clock from './clock.js';
+import * as dateDisplay from './date-display.js';
+import * as dayProgress from './day-progress.js';
+import * as weekProgress from './week-progress.js';
+import * as yearProgress from './year-progress.js';
+import * as countdown from './countdown.js';
+import * as pomodoro from './pomodoro.js';
+import * as breakReminder from './break-reminder.js';
+// New: git
+import * as gitStash from './git-stash.js';
+import * as gitAheadBehind from './git-ahead-behind.js';
+import * as gitLastCommit from './git-last-commit.js';
+import * as gitTag from './git-tag.js';
+import * as packageVersion from './package-version.js';
+// New: data viz
+import * as trendArrow from './trend-arrow.js';
+import * as costSparkline from './cost-sparkline.js';
+import * as linesSparkline from './lines-sparkline.js';
+// New: fun
+import * as moodRing from './mood-ring.js';
+import * as dadJoke from './dad-joke.js';
+import * as magic8ball from './magic-8ball.js';
+import * as compliment from './compliment.js';
+import * as loadingSpinner from './loading-spinner.js';
+// New: gamification
+import * as xpBar from './xp-bar.js';
+import * as level from './level.js';
+import * as comboMeter from './combo-meter.js';
+import * as bossHealth from './boss-health.js';
+import * as questLog from './quest-log.js';
+import * as lootDrop from './loot-drop.js';
 
 const allPlugins = [
   modelName, contextBar, contextPercent, contextTokens,
@@ -55,6 +98,21 @@ const allPlugins = [
   battleLog, cat, weatherReport,
   emojiStory, speedrun,
   stockTicker, rpgStats,
+  // Context & token management
+  contextRemaining, contextEta, compactHint, inputOutputRatio,
+  tokenRate, costRate, costPerLine, tokensPerDollar,
+  efficiencyScore, idleTimer,
+  // Time & productivity
+  clock, dateDisplay, dayProgress, weekProgress, yearProgress,
+  countdown, pomodoro, breakReminder,
+  // Git
+  gitStash, gitAheadBehind, gitLastCommit, gitTag, packageVersion,
+  // Data viz
+  trendArrow, costSparkline, linesSparkline,
+  // Fun
+  moodRing, dadJoke, magic8ball, compliment, loadingSpinner,
+  // Gamification
+  xpBar, level, comboMeter, bossHealth, questLog, lootDrop,
 ];
 
 export const builtinPlugins = {};
