@@ -1,8 +1,8 @@
 // src/compositor.js — Layout engine
 // Zero dependencies. Node 18+ ESM.
 
-import { openSync } from 'fs';
-import * as tty from 'tty';
+import { openSync, closeSync } from 'fs';
+import { execFileSync } from 'child_process';
 import { stylize, stripAnsi } from './color.js';
 
 /**
@@ -31,12 +31,21 @@ function detectWidth() {
   if (process.stdout.columns) return process.stdout.columns;
   if (process.stderr.columns) return process.stderr.columns;
 
-  // 4. Open /dev/tty to get real terminal width (read-only ioctl, safe from pipes)
+  // 4. Query real terminal size via stty with /dev/tty as stdin.
+  //    `stty size` outputs "rows cols". We open /dev/tty and pass the fd
+  //    as stty's stdin so it queries the actual terminal, not the pipe.
   try {
-    const fd = openSync('/dev/tty', 'r');
-    const stream = new tty.ReadStream(fd);
-    const cols = stream.columns;
-    stream.destroy(); // also closes the fd
+    const ttyFd = openSync('/dev/tty', 'r');
+    let cols = 0;
+    try {
+      const output = execFileSync('stty', ['size'], {
+        encoding: 'utf8',
+        timeout: 1000,
+        stdio: [ttyFd, 'pipe', 'pipe'],
+      }).trim();
+      cols = parseInt(output.split(/\s+/)[1], 10);
+    } catch {}
+    closeSync(ttyFd);
     if (cols > 0) return cols;
   } catch {
     // /dev/tty unavailable (e.g., CI, Docker without TTY)
