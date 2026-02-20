@@ -1,9 +1,9 @@
-// src/plugins/cost-sparkline.js — Cost level as sparkline character
+// src/plugins/cost-gauge.js — Cost level as a bar character
 // Zero dependencies. Node 18+ ESM.
 
 export const meta = {
-  name: 'cost-sparkline',
-  description: 'Shows session cost as a sparkline-style bar',
+  name: 'cost-gauge',
+  description: 'Shows session cost with a visual level gauge',
   requires: [],
   defaultConfig: {
     style: 'green',

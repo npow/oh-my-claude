@@ -1,9 +1,9 @@
-// src/plugins/trend-arrow.js — Up/down/flat arrow for context usage
+// src/plugins/context-level.js — Arrow indicator for context usage level
 // Zero dependencies. Node 18+ ESM.
 
 export const meta = {
-  name: 'trend-arrow',
-  description: 'Shows an arrow indicating context usage trend direction',
+  name: 'context-level',
+  description: 'Shows an arrow indicating context usage level (low/medium/high)',
   requires: [],
   defaultConfig: {
     style: 'dim',

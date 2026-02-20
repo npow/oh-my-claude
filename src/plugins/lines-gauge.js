@@ -1,9 +1,9 @@
-// src/plugins/lines-sparkline.js — Lines changed as sparkline bar
+// src/plugins/lines-gauge.js — Lines changed with a visual level gauge
 // Zero dependencies. Node 18+ ESM.
 
 export const meta = {
-  name: 'lines-sparkline',
-  description: 'Shows lines changed as a sparkline-style bar',
+  name: 'lines-gauge',
+  description: 'Shows total lines changed with a visual level gauge',
   requires: [],
   defaultConfig: {
     style: 'green',

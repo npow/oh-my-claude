@@ -1,9 +1,9 @@
-// src/plugins/pomodoro.js — Pomodoro-style countdown based on session time
+// src/plugins/work-cycle.js — Automatic work/break cycle based on session time
 // Zero dependencies. Node 18+ ESM.
 
 export const meta = {
-  name: 'pomodoro',
-  description: 'Shows a pomodoro timer based on session duration',
+  name: 'work-cycle',
+  description: 'Alternates between work and break phases based on session duration',
   requires: [],
   defaultConfig: {
     style: 'green',

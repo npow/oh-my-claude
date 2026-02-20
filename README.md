@@ -122,12 +122,12 @@ Run `npm run showcase` to see all themes live in your terminal.
 | `context-eta` | Time until context is full | `ETA 22m` |
 | `compact-hint` | Suggests /compact at threshold | `/compact` |
 | `token-sparkline` | Context history sparkline | `▁▂▃▄▅▆▇█` |
-| `trend-arrow` | Context usage trend | `↑↑` rising, `→` flat |
+| `context-level` | Context usage level indicator | `↑↑` high, `→` low |
 | `session-cost` | Session cost in USD | `$2.41` |
 | `cost-budget` | Cost vs budget | `$3.50/$10.00` |
 | `cost-rate` | Dollars per minute burn rate | `$0.36/m` |
 | `cost-per-line` | Cost per line of code | `3¢/line` |
-| `cost-sparkline` | Cost as sparkline bar | `$4.56 ▅` |
+| `cost-gauge` | Cost with visual level gauge | `$4.56 ▅` |
 | `tokens-per-dollar` | Token efficiency | `18k tok/$` |
 | `input-output-ratio` | Input vs output tokens | `6.5:1 i/o` |
 | `token-rate` | Token consumption per minute | `7.2k tok/m` |
@@ -135,9 +135,9 @@ Run `npm run showcase` to see all themes live in your terminal.
 | `model-name` | Current model | `Opus` |
 | `session-timer` | Session duration | `25m 0s` |
 | `api-timer` | API wait time | `api 3m 40s` |
-| `idle-timer` | Time spent thinking | `idle 9m 30s` |
+| `think-timer` | Non-API time (reading, typing, thinking) | `you 9m 30s` |
 | `lines-changed` | Lines added/removed | `+250 -23` |
-| `lines-sparkline` | Lines changed as sparkline | `▄ 104L` |
+| `lines-gauge` | Lines changed with level gauge | `▄ 104L` |
 | `smart-nudge` | Contextual suggestions | `💡 /compact` at 75% |
 | `directory` | Working directory | `myproject` |
 | `package-version` | Version from package.json | `v0.3.1` |
@@ -166,7 +166,7 @@ Run `npm run showcase` to see all themes live in your terminal.
 | `week-progress` | Workweek progress | `Wed ▓▓▓░░` |
 | `year-progress` | Year percentage | `14% of 2026` |
 | `countdown` | Days until target date | `launch in 12d` |
-| `pomodoro` | Pomodoro timer | `🍅 13m` work, `☕ break 3m` |
+| `work-cycle` | Automatic work/break cycle | `🍅 13m` work, `☕ break 3m` |
 | `break-reminder` | Break reminder | `take a break` after 60m |
 
 ### Have fun while you wait

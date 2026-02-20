@@ -52,7 +52,7 @@ import * as costRate from './cost-rate.js';
 import * as costPerLine from './cost-per-line.js';
 import * as tokensPerDollar from './tokens-per-dollar.js';
 import * as efficiencyScore from './efficiency-score.js';
-import * as idleTimer from './idle-timer.js';
+import * as thinkTimer from './think-timer.js';
 // New: time & productivity
 import * as clock from './clock.js';
 import * as dateDisplay from './date-display.js';
@@ -60,7 +60,7 @@ import * as dayProgress from './day-progress.js';
 import * as weekProgress from './week-progress.js';
 import * as yearProgress from './year-progress.js';
 import * as countdown from './countdown.js';
-import * as pomodoro from './pomodoro.js';
+import * as workCycle from './work-cycle.js';
 import * as breakReminder from './break-reminder.js';
 // New: git
 import * as gitStash from './git-stash.js';
@@ -69,9 +69,9 @@ import * as gitLastCommit from './git-last-commit.js';
 import * as gitTag from './git-tag.js';
 import * as packageVersion from './package-version.js';
 // New: data viz
-import * as trendArrow from './trend-arrow.js';
-import * as costSparkline from './cost-sparkline.js';
-import * as linesSparkline from './lines-sparkline.js';
+import * as contextLevel from './context-level.js';
+import * as costGauge from './cost-gauge.js';
+import * as linesGauge from './lines-gauge.js';
 // New: fun
 import * as moodRing from './mood-ring.js';
 import * as dadJoke from './dad-joke.js';
@@ -101,14 +101,14 @@ const allPlugins = [
   // Context & token management
   contextRemaining, contextEta, compactHint, inputOutputRatio,
   tokenRate, costRate, costPerLine, tokensPerDollar,
-  efficiencyScore, idleTimer,
+  efficiencyScore, thinkTimer,
   // Time & productivity
   clock, dateDisplay, dayProgress, weekProgress, yearProgress,
-  countdown, pomodoro, breakReminder,
+  countdown, workCycle, breakReminder,
   // Git
   gitStash, gitAheadBehind, gitLastCommit, gitTag, packageVersion,
   // Data viz
-  trendArrow, costSparkline, linesSparkline,
+  contextLevel, costGauge, linesGauge,
   // Fun
   moodRing, dadJoke, magic8ball, compliment, loadingSpinner,
   // Gamification
