@@ -222,48 +222,267 @@ See [screenshots above](#pick-your-vibe) for each theme in action.
 
 ---
 
-## Write your own
+## Add a plugin
 
-No fork needed:
+Three ways to get a plugin:
+
+**1. Install from git** -- grab a community or first-party plugin:
 
 ```bash
-omc create my-plugin
+omc install https://github.com/npow/omc-plugin-weather
+omc add weather
 ```
 
-Creates `~/.claude/oh-my-claude/plugins/my-plugin/plugin.js`:
+Also works with local paths: `omc install /path/to/my-plugin`
+
+**2. Create with the CLI** -- scaffold a new plugin from scratch:
+
+```bash
+omc create my-plugin             # JS plugin
+omc create my-plugin --script    # Script plugin (Python, Bash, etc.)
+```
+
+**3. Ask Claude** -- if you have the [skill](#claude-code-skill) installed:
+
+> "Create an oh-my-claude plugin that shows my current CPU temperature"
+
+Claude scaffolds, implements, tests, and wires it up.
+
+There's also a starter template at `templates/plugin/` you can copy manually.
+
+---
+
+## Write your own plugin
+
+### JS plugins
+
+A JS plugin is a single file at `~/.claude/oh-my-claude/plugins/<name>/plugin.js`. It exports two things:
 
 ```js
 export const meta = {
   name: 'my-plugin',
-  description: 'My custom plugin',
+  description: 'Shows something useful',
   requires: [],
-  defaultConfig: {},
+  defaultConfig: {
+    style: 'cyan',
+    threshold: 50,       // users override this with: omc config my-plugin threshold=75
+  },
 };
 
 export function render(data, config) {
-  return { text: 'Hello!', style: 'cyan' };
+  const cfg = { ...meta.defaultConfig, ...config };
+
+  const pct = data?.context_window?.used_percentage;
+  if (pct == null) return null;   // hide when data is missing
+
+  const style = pct >= cfg.threshold ? 'bold red' : cfg.style;
+  return { text: `${Math.round(pct)}%`, style };
 }
 ```
 
-Add it to your theme and it takes effect immediately. Three rules: export `meta`, export `render`, return `{ text, style }` or `null`.
+Three rules: export `meta`, export `render`, return `{ text, style }` or `null`.
 
-Full data field reference: [docs/plugin-contract.md](docs/plugin-contract.md)
+### Available data fields
 
-**Share it:** PR it into `src/plugins/` or post your `plugin.js` anywhere -- others drop it in their plugins directory and go.
+`render(data, config)` receives JSON from Claude Code. Use optional chaining for all access.
+
+```js
+data?.model?.display_name          // "Opus", "Sonnet"
+data?.model?.id                    // "claude-opus-4-6"
+data?.context_window?.used_percentage   // 0-100
+data?.context_window?.context_window_size  // 200000
+data?.cost?.total_cost_usd         // 4.56
+data?.cost?.total_duration_ms      // session wall-clock time
+data?.cost?.total_lines_added      // 83
+data?.cost?.total_lines_removed    // 21
+data?.workspace?.current_dir       // "/Users/dev/myproject"
+data?.session_id                   // unique session id
+data?.version                      // Claude Code version
+data?.vim?.mode                    // "NORMAL" if vim active
+```
+
+Full reference: [docs/plugin-contract.md](docs/plugin-contract.md)
+
+### Shell commands
+
+Plugins that run shell commands must use the cache layer -- raw `execSync` blocks the entire statusline:
+
+```js
+import { cachedExec } from '../../src/cache.js';
+
+export function render(data, config) {
+  // cachedExec(key, command, ttlMs) — runs at most once per TTL
+  const count = cachedExec('stash-count', 'git stash list | wc -l', 5000);
+  if (!count || count.trim() === '0') return null;
+  return { text: `stash:${count.trim()}`, style: 'yellow' };
+}
+```
+
+### Script plugins (Python, Bash, etc.)
+
+For non-JS plugins, create an executable `plugin` file instead of `plugin.js`:
+
+```bash
+omc create my-plugin --script --lang=python
+```
+
+This creates `~/.claude/oh-my-claude/plugins/my-plugin/plugin` (executable) and `plugin.json` (metadata). The script reads JSON on stdin and writes `{ "text": "...", "style": "..." }` to stdout:
+
+```python
+#!/usr/bin/env python3
+import json, sys
+
+data = json.load(sys.stdin)
+cost = data.get("cost", {}).get("total_cost_usd")
+if cost is None:
+    sys.exit(1)  # exit non-zero = hide plugin
+
+config = data.get("_config", {})  # per-plugin config merged here
+json.dump({"text": f"${cost:.2f}", "style": "green"}, sys.stdout)
+```
+
+### Dependencies
+
+oh-my-claude itself has zero npm dependencies by design. Plugins follow the same principle:
+
+- **JS plugins** can only use Node 18+ built-ins (`node:fs`, `node:child_process`, etc.) and oh-my-claude's own `cachedExec`. No `node_modules`, no `import` from npm packages.
+- **Script plugins** can use whatever their language provides -- a Python plugin can `import requests`, a Bash plugin can shell out to `jq`, etc. The host machine just needs those tools installed.
+
+The `meta.requires` field (e.g. `requires: ['git']`) is declarative metadata today -- shown in `omc info` and `omc list` so users know what a plugin needs. Automatic dependency checking is on the roadmap.
+
+If your plugin needs something that isn't a Node built-in, make it a script plugin.
+
+### Plugin config
+
+Users configure plugins without editing code:
+
+```bash
+omc config my-plugin                    # show current values
+omc config my-plugin threshold=75       # set a value
+omc config my-plugin style="bold red"   # set a string
+```
+
+Values are stored in `~/.claude/oh-my-claude/config.json` under `plugins.<name>` and merged on top of `defaultConfig` at runtime.
+
+### Test and add to statusline
+
+```bash
+omc test my-plugin           # run with mock data, verify output
+omc add my-plugin            # add to line 1, right side (default)
+omc add my-plugin --line 2 --left  # or pick a specific spot
+omc show                     # see the full layout with preview
+omc doctor                   # verify everything is healthy
+```
+
+### Share your plugin
+
+A shareable plugin is a git repo with this structure:
+
+```
+omc-plugin-<name>/
+  plugin.js          # or executable `plugin` for script plugins
+  plugin.json        # optional: name, description, defaultConfig
+  README.md          # optional: usage instructions
+```
+
+Others install it with:
+
+```bash
+omc install https://github.com/<user>/omc-plugin-<name>
+omc add <name>
+```
+
+Or PR it into `src/plugins/` to make it a built-in.
 
 ---
 
 ## CLI
 
+### Setup
+
 ```
 omc install               Interactive setup wizard
-omc theme <name>          Switch theme (e.g. omc theme tamagotchi)
-omc themes                List available themes
-omc create <name>         Scaffold a new plugin
-omc list                  List all 41 built-in plugins
-omc validate              Check plugin contract compliance
 omc uninstall             Remove from Claude Code
 ```
+
+### Layout
+
+```
+omc show                  Show current layout with live preview
+omc add <name>            Add a plugin to the statusline
+                            --line N (default: 1)  --left (default: right)
+omc remove <name>         Remove a plugin from the statusline
+omc set <line>            Set an entire line's plugins
+                            --left p1 p2 ... --right p3 p4 ...
+```
+
+### Themes
+
+```
+omc theme <name>          Switch theme (e.g. omc theme tamagotchi)
+omc themes                List available themes
+omc theme save <name>     Save your current setup as a reusable theme
+```
+
+### Plugins
+
+```
+omc list                  List all 41 built-in + installed plugins
+omc info <name>           Show plugin details, config, statusline location
+omc config <name>         Show/set plugin config values
+                            omc config weather units=f refresh=30
+omc test <name>           Run a plugin with mock data and show output
+omc create <name>         Scaffold a new plugin
+```
+
+### Diagnostics
+
+```
+omc doctor                Check config, theme, and every plugin for issues
+omc validate              Run the plugin contract validator
+```
+
+### Common workflows
+
+**Tweak a plugin's config:**
+```bash
+omc info context-bar      # see what options exist
+omc config context-bar    # see current values
+omc config context-bar width=15 warnAt=75
+omc test context-bar      # preview the change
+```
+
+**Redesign your layout:**
+```bash
+omc show                  # see what you have now
+omc set 1 --left model-name git-branch --right session-cost
+omc show                  # verify
+omc theme save my-layout  # save for later
+```
+
+**Debug a broken statusline:**
+```bash
+omc doctor                # checks everything, suggests fixes
+omc test <plugin>         # test one plugin in isolation
+```
+
+---
+
+## Claude Code skill
+
+If you use Claude Code to develop, there's a `/create-plugin` skill that builds plugins for you interactively. It knows the plugin contract, data fields, and CLI commands.
+
+To install it, copy the skill into your project:
+
+```bash
+# Already included if you cloned this repo — it's at .claude/skills/create-plugin/
+```
+
+Then just ask Claude:
+
+> "Create an oh-my-claude plugin that shows my current git stash count"
+
+Claude will scaffold the plugin, implement the render logic, test it with `omc test`, and wire it into your statusline.
 
 ---
 

@@ -87,6 +87,7 @@ function loadManifest(pluginDir, dirName) {
     name: dirName,
     description: '',
     cacheTtl: 5000,
+    timeout: 5000,
     defaultConfig: {},
   };
 
@@ -97,6 +98,7 @@ function loadManifest(pluginDir, dirName) {
       name: (typeof manifest.name === 'string' && manifest.name) || defaults.name,
       description: manifest.description || defaults.description,
       cacheTtl: typeof manifest.cacheTtl === 'number' ? manifest.cacheTtl : defaults.cacheTtl,
+      timeout: typeof manifest.timeout === 'number' ? manifest.timeout : defaults.timeout,
       defaultConfig: manifest.defaultConfig || defaults.defaultConfig,
     };
   } catch {
@@ -121,7 +123,7 @@ function wrapScriptPlugin(scriptPath, manifest) {
     },
     render(data, config) {
       const payload = JSON.stringify({ ...data, _config: config });
-      return cachedExecPlugin(manifest.name, scriptPath, payload, manifest.cacheTtl);
+      return cachedExecPlugin(manifest.name, scriptPath, payload, manifest.cacheTtl, manifest.timeout);
     },
   };
 }

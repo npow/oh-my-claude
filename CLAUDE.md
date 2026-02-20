@@ -21,6 +21,7 @@ src/
   compositor.js         Multi-line left/right alignment and output
   color.js              Style string -> ANSI escape code parser
   cache.js              TTL cache for shell command results
+  mock-data.js          Canonical mock data for previews and tests
   plugins/              Built-in plugins (one file per plugin)
     model.js            Model name/id display
     context.js          Context window usage
@@ -28,12 +29,16 @@ src/
     ...
 themes/
   default.json          Ships with the framework
+templates/
+  plugin/               Starter template for new plugins
 tests/
   fixtures/             Sample stdin JSON for testing
   *.test.js             Node test runner tests
 scripts/
   validate.js           Validates all plugins export correct shape
 docs/                   Deep documentation (see below)
+.claude/skills/
+  create-plugin/        Claude Code skill for building plugins interactively
 ```
 
 ## Documentation Index

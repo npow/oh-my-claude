@@ -108,6 +108,40 @@ function loadTheme(themeName) {
 }
 
 /**
+ * Apply inject rules to add plugins to theme lines without replacing them.
+ *
+ * inject format (1-indexed line numbers):
+ *   { "1": { "left": ["my-plugin"], "right": ["weather"] } }
+ *
+ * Left items are appended to the left array, right items are prepended to the right array.
+ * This puts injected items toward the center of the line (inner edge of each side).
+ *
+ * @param {Array} lines - The resolved lines array (mutated in place)
+ * @param {object} inject - Map of line number (string) to { left?, right? }
+ */
+function applyInject(lines, inject) {
+  if (!Array.isArray(lines)) return;
+
+  for (const [key, rule] of Object.entries(inject)) {
+    const idx = parseInt(key, 10) - 1; // 1-indexed in config
+    if (isNaN(idx) || idx < 0 || idx >= lines.length) continue;
+    if (!rule || typeof rule !== 'object') continue;
+
+    const line = lines[idx];
+    if (!line) continue;
+
+    if (Array.isArray(rule.left)) {
+      if (!Array.isArray(line.left)) line.left = [];
+      line.left.push(...rule.left);
+    }
+    if (Array.isArray(rule.right)) {
+      if (!Array.isArray(line.right)) line.right = [];
+      line.right.unshift(...rule.right);
+    }
+  }
+}
+
+/**
  * Load the full configuration by merging theme + user overrides.
  *
  * Resolution order:
@@ -147,6 +181,11 @@ export function loadConfig(userConfigPath) {
     if (userConfig.plugins) {
       if (!config.plugins) config.plugins = {};
       config.plugins = deepMerge(config.plugins, userConfig.plugins);
+    }
+
+    // Apply inject: add plugins to theme lines without replacing them
+    if (userConfig.inject && typeof userConfig.inject === 'object') {
+      applyInject(config.lines, userConfig.inject);
     }
   }
 

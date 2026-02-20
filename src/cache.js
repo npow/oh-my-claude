@@ -94,9 +94,10 @@ export function cachedExec(key, command, ttlMs = 5000) {
  * @param {string} executablePath - Absolute path to the executable script
  * @param {string} stdinPayload - JSON string to pipe to stdin
  * @param {number} [ttlMs=5000] - Cache time-to-live in milliseconds
+ * @param {number} [timeoutMs=5000] - Execution timeout in milliseconds
  * @returns {{ text: string, style: string } | null}
  */
-export function cachedExecPlugin(pluginName, executablePath, stdinPayload, ttlMs = 5000) {
+export function cachedExecPlugin(pluginName, executablePath, stdinPayload, ttlMs = 5000, timeoutMs = 5000) {
   if (!pluginName || !executablePath) return null;
 
   ensureCacheDir();
@@ -123,7 +124,7 @@ export function cachedExecPlugin(pluginName, executablePath, stdinPayload, ttlMs
     stdout = execFileSync(executablePath, [], {
       input: stdinPayload,
       encoding: 'utf8',
-      timeout: 2000,
+      timeout: timeoutMs,
       maxBuffer: 64 * 1024,
       stdio: ['pipe', 'pipe', 'pipe'],
     }).trim();

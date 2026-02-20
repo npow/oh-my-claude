@@ -1,0 +1,9 @@
+{
+  "name": "my-plugin",
+  "description": "One-line description of what this shows",
+  "cacheTtl": 5000,
+  "timeout": 5000,
+  "defaultConfig": {
+    "style": "cyan"
+  }
+}

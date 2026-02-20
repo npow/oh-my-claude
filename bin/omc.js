@@ -4,12 +4,14 @@
 // Usage: npx oh-my-claude [command]
 // Commands: install, install <url>, theme, themes, uninstall, list, validate, create
 
-import { readFileSync, writeFileSync, mkdirSync, cpSync, existsSync, readdirSync, chmodSync, accessSync, constants } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, cpSync, existsSync, readdirSync, chmodSync, accessSync, constants, statSync } from 'node:fs';
 import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { homedir } from 'node:os';
 import { createInterface } from 'node:readline';
-import { execSync } from 'node:child_process';
+import { execSync, execFileSync } from 'node:child_process';
+import { loadConfig } from '../src/config.js';
+import { MOCK_DATA } from '../src/mock-data.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PACKAGE_ROOT = join(__dirname, '..');
@@ -121,17 +123,8 @@ async function install() {
   // 7. Show preview
   log(`\n${C.bold}Preview:${C.reset}\n`);
 
-  const mockData = JSON.stringify({
-    model: { display_name: 'Opus', id: 'claude-opus-4-6' },
-    context_window: { used_percentage: 35, context_window_size: 200000, total_input_tokens: 70000, total_output_tokens: 10000 },
-    cost: { total_cost_usd: 2.45, total_duration_ms: 900000, total_api_duration_ms: 220000, total_lines_added: 83, total_lines_removed: 21 },
-    workspace: { current_dir: process.cwd(), project_dir: process.cwd() },
-    session_id: 'preview', version: '2.1.34',
-  });
-
-  const { execSync } = await import('node:child_process');
   try {
-    const preview = execSync(`echo '${mockData}' | node ${join(OMC_DIR, 'src', 'runner.js')}`, { encoding: 'utf8' });
+    const preview = execSync(`echo '${JSON.stringify(MOCK_DATA)}' | node ${join(OMC_DIR, 'src', 'runner.js')}`, { encoding: 'utf8' });
     log(preview);
   } catch {
     log(`${C.dim}(preview unavailable)${C.reset}`);
@@ -225,9 +218,129 @@ function installPlugin(urlOrPath) {
     if (manifest.description) log(`  ${C.dim}${manifest.description}${C.reset}`);
   } catch {}
 
-  log(`\n${C.bold}To use it:${C.reset}`);
-  log(`  Add ${C.cyan}"${name}"${C.reset} to a theme's lines array in your config:`);
-  log(`  ${C.dim}${CONFIG_PATH}${C.reset}\n`);
+  // Resolve the plugin name from manifest if available
+  let pluginName = name;
+  try {
+    const manifest = JSON.parse(readFileSync(join(dest, 'plugin.json'), 'utf8'));
+    if (manifest.name) pluginName = manifest.name;
+  } catch {}
+
+  log(`\n${C.bold}Next:${C.reset} Run ${C.cyan}omc add ${pluginName}${C.reset} to add it to your statusline.`);
+  log(`${C.dim}  Options: omc add ${pluginName} --line 2 --left${C.reset}\n`);
+}
+
+// ─── Add / Remove Plugin from Statusline ─────────
+
+/**
+ * Read user config, or return a default skeleton.
+ */
+function readConfig() {
+  try {
+    return JSON.parse(readFileSync(CONFIG_PATH, 'utf8'));
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * Add a plugin to the statusline via the inject config.
+ */
+async function addPlugin(name, args) {
+  if (!name || typeof name !== 'string') {
+    warn('Usage: omc add <plugin-name> [--line N] [--left]');
+    log(`\n${C.dim}Example: omc add weather`);
+    log(`         omc add weather --line 2 --left${C.reset}\n`);
+    process.exit(1);
+  }
+
+  // Validate plugin exists
+  const known = allPluginNames();
+  if (!known.includes(name)) {
+    const suggestions = fuzzyMatch(name, known);
+    warn(`Plugin "${name}" not found.${suggestions.length ? ` Did you mean: ${suggestions.join(', ')}?` : ''}`);
+    log(`${C.dim}Adding anyway — plugin may be installed later.${C.reset}`);
+  }
+
+  // Parse flags
+  const lineFlag = args.find(a => a.startsWith('--line'));
+  let lineNum = 1;
+  if (lineFlag) {
+    const lineVal = lineFlag.includes('=') ? lineFlag.split('=')[1] : args[args.indexOf(lineFlag) + 1];
+    lineNum = parseInt(lineVal, 10) || 1;
+  }
+  const side = args.includes('--left') ? 'left' : 'right';
+
+  const config = readConfig();
+
+  // Check if already injected
+  if (config.inject) {
+    const lineKey = String(lineNum);
+    const existing = config.inject[lineKey]?.[side];
+    if (Array.isArray(existing) && existing.includes(name)) {
+      warn(`"${name}" is already on line ${lineNum} ${side} side.`);
+      process.exit(0);
+    }
+  }
+
+  // Add to inject
+  if (!config.inject) config.inject = {};
+  const lineKey = String(lineNum);
+  if (!config.inject[lineKey]) config.inject[lineKey] = {};
+  if (!Array.isArray(config.inject[lineKey][side])) config.inject[lineKey][side] = [];
+  config.inject[lineKey][side].push(name);
+
+  mkdirSync(dirname(CONFIG_PATH), { recursive: true });
+  writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2));
+
+  success(`Added ${C.bold}${name}${C.reset} → line ${lineNum}, ${side} side`);
+  log(`${C.dim}Restart Claude Code to see it.${C.reset}\n`);
+}
+
+/**
+ * Remove a plugin from the statusline inject config.
+ */
+function removePlugin(name) {
+  if (!name || typeof name !== 'string') {
+    warn('Usage: omc remove <plugin-name>');
+    process.exit(1);
+  }
+
+  const config = readConfig();
+  if (!config.inject) {
+    warn(`"${name}" is not in your statusline config.`);
+    process.exit(0);
+  }
+
+  let removed = false;
+  for (const [lineKey, rule] of Object.entries(config.inject)) {
+    for (const side of ['left', 'right']) {
+      if (Array.isArray(rule[side])) {
+        const idx = rule[side].indexOf(name);
+        if (idx !== -1) {
+          rule[side].splice(idx, 1);
+          removed = true;
+          // Clean up empty arrays and objects
+          if (rule[side].length === 0) delete rule[side];
+        }
+      }
+    }
+    if (Object.keys(config.inject[lineKey]).length === 0) {
+      delete config.inject[lineKey];
+    }
+  }
+  if (Object.keys(config.inject).length === 0) {
+    delete config.inject;
+  }
+
+  if (!removed) {
+    warn(`"${name}" is not in your statusline config.`);
+    process.exit(0);
+  }
+
+  writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2));
+
+  success(`Removed ${C.bold}${name}${C.reset} from statusline`);
+  log(`${C.dim}Restart Claude Code to apply.${C.reset}\n`);
 }
 
 // ─── Themes ──────────────────────────────────────
@@ -266,14 +379,6 @@ async function listPlugins() {
   const plugDir = existsSync(join(OMC_DIR, 'src', 'plugins'))
     ? join(OMC_DIR, 'src', 'plugins')
     : join(PACKAGE_ROOT, 'src', 'plugins');
-
-  const MOCK_DATA = {
-    model: { id: 'claude-opus-4-6', display_name: 'Opus' },
-    context_window: { used_percentage: 42, context_window_size: 200000, total_input_tokens: 84000, total_output_tokens: 12000 },
-    cost: { total_cost_usd: 4.56, total_duration_ms: 750000, total_api_duration_ms: 180000, total_lines_added: 83, total_lines_removed: 21 },
-    workspace: { current_dir: '/Users/dev/myproject', project_dir: '/Users/dev/myproject' },
-    session_id: 'demo', version: '2.1.34',
-  };
 
   const files = readdirSync(plugDir).filter(f => f.endsWith('.js') && f !== 'index.js').sort();
 
@@ -627,17 +732,8 @@ async function setTheme(name) {
   if (desc) log(`  ${C.dim}${desc}${C.reset}`);
 
   // Show preview
-  const mockData = JSON.stringify({
-    model: { display_name: 'Opus', id: 'claude-opus-4-6' },
-    context_window: { used_percentage: 35, context_window_size: 200000, total_input_tokens: 70000, total_output_tokens: 10000 },
-    cost: { total_cost_usd: 2.45, total_duration_ms: 900000, total_api_duration_ms: 220000, total_lines_added: 83, total_lines_removed: 21 },
-    workspace: { current_dir: process.cwd(), project_dir: process.cwd() },
-    session_id: 'preview', version: '2.1.34',
-  });
-
-  const { execSync } = await import('node:child_process');
   try {
-    const preview = execSync(`echo '${mockData}' | node ${join(OMC_DIR, 'src', 'runner.js')}`, { encoding: 'utf8' });
+    const preview = execSync(`echo '${JSON.stringify(MOCK_DATA)}' | node ${join(OMC_DIR, 'src', 'runner.js')}`, { encoding: 'utf8' });
     log(`\n${C.bold}Preview:${C.reset}\n`);
     log(preview);
   } catch {}
@@ -666,6 +762,641 @@ function uninstall() {
   log(`${C.green}Done.${C.reset}\n`);
 }
 
+// ─── Shared Helpers ──────────────────────────────
+
+/**
+ * Levenshtein distance between two strings.
+ */
+function levenshtein(a, b) {
+  if (a === b) return 0;
+  if (!a.length) return b.length;
+  if (!b.length) return a.length;
+
+  const matrix = [];
+  for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+  for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+
+  for (let i = 1; i <= b.length; i++) {
+    for (let j = 1; j <= a.length; j++) {
+      const cost = b[i - 1] === a[j - 1] ? 0 : 1;
+      matrix[i][j] = Math.min(
+        matrix[i - 1][j] + 1,
+        matrix[i][j - 1] + 1,
+        matrix[i - 1][j - 1] + cost,
+      );
+    }
+  }
+  return matrix[b.length][a.length];
+}
+
+/**
+ * Suggest similar names for a typo. Returns top 3 within distance <= 3.
+ */
+function fuzzyMatch(input, candidates) {
+  if (!input || !candidates.length) return [];
+  const scored = candidates
+    .map(c => ({ name: c, dist: levenshtein(input.toLowerCase(), c.toLowerCase()) }))
+    .filter(c => c.dist <= 3 || c.name.includes(input) || input.includes(c.name))
+    .sort((a, b) => a.dist - b.dist);
+  return scored.slice(0, 3).map(s => s.name);
+}
+
+/**
+ * List all known plugin names (built-in + installed).
+ */
+function allPluginNames() {
+  const names = new Set();
+
+  // Built-in plugins
+  const builtinDir = existsSync(join(OMC_DIR, 'src', 'plugins'))
+    ? join(OMC_DIR, 'src', 'plugins')
+    : join(PACKAGE_ROOT, 'src', 'plugins');
+  try {
+    for (const f of readdirSync(builtinDir)) {
+      if (f.endsWith('.js') && f !== 'index.js') names.add(f.replace('.js', ''));
+    }
+  } catch {}
+
+  // Installed plugins
+  if (existsSync(PLUGINS_DIR)) {
+    try {
+      for (const entry of readdirSync(PLUGINS_DIR)) {
+        const entryPath = join(PLUGINS_DIR, entry);
+        try {
+          if (!statSync(entryPath).isDirectory()) continue;
+          if (existsSync(join(entryPath, 'plugin.js')) || existsSync(join(entryPath, 'plugin'))) {
+            // Use manifest name if available
+            try {
+              const manifest = JSON.parse(readFileSync(join(entryPath, 'plugin.json'), 'utf8'));
+              if (manifest.name) { names.add(manifest.name); continue; }
+            } catch {}
+            names.add(entry);
+          }
+        } catch {}
+      }
+    } catch {}
+  }
+
+  return [...names].sort();
+}
+
+/**
+ * Resolve a plugin by name. Returns { source, meta, render, path } or null.
+ */
+async function resolvePlugin(name) {
+  if (!name) return null;
+
+  // 1. Built-in
+  const builtinDir = existsSync(join(OMC_DIR, 'src', 'plugins'))
+    ? join(OMC_DIR, 'src', 'plugins')
+    : join(PACKAGE_ROOT, 'src', 'plugins');
+  const builtinPath = join(builtinDir, `${name}.js`);
+  if (existsSync(builtinPath)) {
+    try {
+      const mod = await import(pathToFileURL(builtinPath).href);
+      if (mod.meta && typeof mod.render === 'function') {
+        return { source: 'builtin', meta: mod.meta, render: mod.render, path: builtinPath };
+      }
+    } catch {}
+  }
+
+  // 2. Installed JS plugin
+  if (existsSync(PLUGINS_DIR)) {
+    // Try direct directory match first
+    const dirs = [name];
+    // Also scan all dirs for matching manifest name
+    try {
+      for (const entry of readdirSync(PLUGINS_DIR)) {
+        if (!dirs.includes(entry)) dirs.push(entry);
+      }
+    } catch {}
+
+    for (const dir of dirs) {
+      const entryPath = join(PLUGINS_DIR, dir);
+      try { if (!statSync(entryPath).isDirectory()) continue; } catch { continue; }
+
+      // plugin.js
+      const jsPath = join(entryPath, 'plugin.js');
+      if (existsSync(jsPath)) {
+        try {
+          const mod = await import(pathToFileURL(jsPath).href);
+          if (mod.meta?.name === name && typeof mod.render === 'function') {
+            return { source: 'installed-js', meta: mod.meta, render: mod.render, path: jsPath };
+          }
+        } catch {}
+      }
+
+      // executable plugin script
+      const scriptPath = join(entryPath, 'plugin');
+      if (existsSync(scriptPath)) {
+        let manifestName = dir;
+        try {
+          const manifest = JSON.parse(readFileSync(join(entryPath, 'plugin.json'), 'utf8'));
+          if (manifest.name) manifestName = manifest.name;
+        } catch {}
+
+        if (manifestName === name) {
+          let isExec = false;
+          try { accessSync(scriptPath, constants.X_OK); isExec = true; } catch {}
+          const manifest = { name: manifestName, description: '', cacheTtl: 5000, timeout: 5000, defaultConfig: {} };
+          try {
+            const raw = JSON.parse(readFileSync(join(entryPath, 'plugin.json'), 'utf8'));
+            if (raw.description) manifest.description = raw.description;
+            if (typeof raw.cacheTtl === 'number') manifest.cacheTtl = raw.cacheTtl;
+            if (typeof raw.timeout === 'number') manifest.timeout = raw.timeout;
+            if (raw.defaultConfig) manifest.defaultConfig = raw.defaultConfig;
+          } catch {}
+
+          return {
+            source: 'installed-script',
+            meta: { name: manifestName, description: manifest.description, requires: [], defaultConfig: manifest.defaultConfig },
+            render: (data, config) => {
+              const payload = JSON.stringify({ ...data, _config: config });
+              try {
+                const stdout = execFileSync(scriptPath, [], {
+                  input: payload, encoding: 'utf8', timeout: manifest.timeout,
+                  maxBuffer: 64 * 1024, stdio: ['pipe', 'pipe', 'pipe'],
+                }).trim();
+                if (!stdout) return null;
+                try {
+                  const parsed = JSON.parse(stdout);
+                  if (parsed && typeof parsed.text === 'string') return { text: parsed.text, style: parsed.style || '' };
+                  return null;
+                } catch {
+                  const firstLine = stdout.split('\n')[0].trim();
+                  return firstLine ? { text: firstLine, style: '' } : null;
+                }
+              } catch { return null; }
+            },
+            path: scriptPath,
+            executable: isExec,
+          };
+        }
+      }
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Infer type of a CLI value based on the default value's type.
+ */
+function inferType(rawValue, defaultValue) {
+  if (typeof defaultValue === 'number') {
+    const n = parseFloat(rawValue);
+    return isNaN(n) ? rawValue : n;
+  }
+  if (typeof defaultValue === 'boolean') {
+    const lower = rawValue.toLowerCase();
+    if (['true', '1', 'yes', 'on'].includes(lower)) return true;
+    if (['false', '0', 'no', 'off'].includes(lower)) return false;
+    return rawValue;
+  }
+  return rawValue;
+}
+
+// ─── Config Command ─────────────────────────────
+
+async function configPlugin(name, kvPairs) {
+  if (!name) {
+    warn('Usage: omc config <plugin> [key=value ...]');
+    log(`\n${C.dim}Show config:  omc config weather`);
+    log(`Set values:   omc config weather units=f refresh=30${C.reset}\n`);
+    process.exit(1);
+  }
+
+  const resolved = await resolvePlugin(name);
+  if (!resolved) {
+    const suggestions = fuzzyMatch(name, allPluginNames());
+    warn(`Plugin "${name}" not found.`);
+    if (suggestions.length) log(`${C.dim}Did you mean: ${suggestions.join(', ')}?${C.reset}`);
+    process.exit(1);
+  }
+
+  const defaults = resolved.meta.defaultConfig || {};
+  const config = readConfig();
+  const overrides = (config.plugins && config.plugins[name]) || {};
+
+  if (!kvPairs || kvPairs.length === 0) {
+    // Show current config
+    log(`\n${C.bold}Config for ${C.cyan}${name}${C.reset}${C.bold}:${C.reset}\n`);
+    const allKeys = new Set([...Object.keys(defaults), ...Object.keys(overrides)]);
+    if (allKeys.size === 0) {
+      log(`  ${C.dim}(no config options)${C.reset}`);
+    } else {
+      for (const key of [...allKeys].sort()) {
+        const def = defaults[key];
+        const cur = overrides[key] !== undefined ? overrides[key] : def;
+        const isOverridden = overrides[key] !== undefined;
+        const marker = isOverridden ? `${C.green}*${C.reset}` : ' ';
+        const defStr = def !== undefined ? ` ${C.dim}(default: ${JSON.stringify(def)})${C.reset}` : '';
+        log(`  ${marker} ${C.bold}${key}${C.reset} = ${JSON.stringify(cur)}${defStr}`);
+      }
+      log(`\n${C.dim}  * = user override${C.reset}`);
+    }
+    log('');
+    return;
+  }
+
+  // Set values
+  if (!config.plugins) config.plugins = {};
+  if (!config.plugins[name]) config.plugins[name] = {};
+
+  for (const pair of kvPairs) {
+    const eqIdx = pair.indexOf('=');
+    if (eqIdx === -1) {
+      warn(`Invalid format: "${pair}" — use key=value`);
+      continue;
+    }
+    const key = pair.slice(0, eqIdx);
+    const rawValue = pair.slice(eqIdx + 1);
+
+    if (!(key in defaults)) {
+      warn(`Unknown key "${key}" for ${name} — setting anyway`);
+    }
+
+    const value = key in defaults ? inferType(rawValue, defaults[key]) : rawValue;
+    config.plugins[name][key] = value;
+    success(`${name}.${key} = ${JSON.stringify(value)}`);
+  }
+
+  mkdirSync(dirname(CONFIG_PATH), { recursive: true });
+  writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2));
+  log(`\n${C.dim}Restart Claude Code to apply.${C.reset}\n`);
+}
+
+// ─── Info Command ───────────────────────────────
+
+async function pluginInfo(name) {
+  if (!name) {
+    warn('Usage: omc info <plugin>');
+    process.exit(1);
+  }
+
+  const resolved = await resolvePlugin(name);
+  if (!resolved) {
+    const suggestions = fuzzyMatch(name, allPluginNames());
+    warn(`Plugin "${name}" not found.`);
+    if (suggestions.length) log(`${C.dim}Did you mean: ${suggestions.join(', ')}?${C.reset}`);
+    process.exit(1);
+  }
+
+  const { source, meta, path: pluginPath } = resolved;
+  const defaults = meta.defaultConfig || {};
+  const config = readConfig();
+  const overrides = (config.plugins && config.plugins[name]) || {};
+
+  log(`\n${C.bold}${C.cyan}${meta.name}${C.reset}`);
+  if (meta.description) log(`  ${meta.description}`);
+  log('');
+  log(`  ${C.bold}Source:${C.reset}  ${source}`);
+  log(`  ${C.bold}Path:${C.reset}    ${pluginPath}`);
+  if (meta.requires?.length) log(`  ${C.bold}Requires:${C.reset} ${meta.requires.join(', ')}`);
+
+  // Config options table
+  const allKeys = new Set([...Object.keys(defaults), ...Object.keys(overrides)]);
+  if (allKeys.size > 0) {
+    log(`\n  ${C.bold}Config options:${C.reset}`);
+    for (const key of [...allKeys].sort()) {
+      const def = defaults[key];
+      const cur = overrides[key] !== undefined ? overrides[key] : def;
+      const type = def !== undefined ? typeof def : typeof cur;
+      const isOverridden = overrides[key] !== undefined;
+      const marker = isOverridden ? `${C.green}*${C.reset}` : ' ';
+      log(`  ${marker} ${key} (${C.dim}${type}${C.reset}) = ${JSON.stringify(cur)}${def !== undefined ? ` ${C.dim}[default: ${JSON.stringify(def)}]${C.reset}` : ''}`);
+    }
+  }
+
+  // Check if on statusline
+  const fullConfig = loadConfig();
+  const lines = fullConfig.lines || [];
+  const locations = [];
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (line.left?.includes(name)) locations.push(`line ${i + 1} left`);
+    if (line.right?.includes(name)) locations.push(`line ${i + 1} right`);
+  }
+  if (locations.length) {
+    log(`\n  ${C.bold}Statusline:${C.reset} ${C.green}active${C.reset} — ${locations.join(', ')}`);
+  } else {
+    log(`\n  ${C.bold}Statusline:${C.reset} ${C.dim}not active${C.reset}`);
+  }
+  log('');
+}
+
+// ─── Test Command ───────────────────────────────
+
+async function testPlugin(name) {
+  if (!name) {
+    warn('Usage: omc test <plugin>');
+    process.exit(1);
+  }
+
+  const resolved = await resolvePlugin(name);
+  if (!resolved) {
+    const suggestions = fuzzyMatch(name, allPluginNames());
+    warn(`Plugin "${name}" not found.`);
+    if (suggestions.length) log(`${C.dim}Did you mean: ${suggestions.join(', ')}?${C.reset}`);
+    process.exit(1);
+  }
+
+  const { source, meta, render } = resolved;
+  const config = readConfig();
+  const pluginConfig = { ...(meta.defaultConfig || {}), ...((config.plugins && config.plugins[name]) || {}) };
+
+  log(`\n${C.bold}Testing ${C.cyan}${name}${C.reset}${C.bold} (${source}):${C.reset}\n`);
+
+  // Run with MOCK_DATA
+  log(`  ${C.bold}Input:${C.reset} MOCK_DATA (model=${MOCK_DATA.model.display_name}, cost=$${MOCK_DATA.cost.total_cost_usd})`);
+  log(`  ${C.bold}Config:${C.reset} ${JSON.stringify(pluginConfig)}`);
+
+  let result;
+  let error = null;
+  try {
+    result = render(MOCK_DATA, pluginConfig);
+  } catch (err) {
+    error = err;
+  }
+
+  if (error) {
+    log(`\n  ${C.red}ERROR:${C.reset} render() threw: ${error.message}`);
+  } else if (result === null) {
+    log(`\n  ${C.bold}Result:${C.reset} ${C.dim}null${C.reset} (plugin hidden)`);
+  } else {
+    log(`\n  ${C.bold}Result:${C.reset}`);
+    log(`    text:  ${JSON.stringify(result.text)}`);
+    log(`    style: ${JSON.stringify(result.style || '')}`);
+    log(`    ${C.dim}rendered: ${result.text}${C.reset}`);
+  }
+
+  // Test with empty data
+  let emptyResult;
+  let emptyError = null;
+  try {
+    emptyResult = render({}, {});
+  } catch (err) {
+    emptyError = err;
+  }
+
+  log(`\n  ${C.bold}Empty data test:${C.reset} ${emptyError ? `${C.red}THREW: ${emptyError.message}${C.reset}` : emptyResult === null ? `${C.green}OK${C.reset} (returns null)` : `${C.green}OK${C.reset} → ${JSON.stringify(emptyResult?.text)}`}`);
+  log('');
+}
+
+// ─── Show Command ───────────────────────────────
+
+function showLayout() {
+  const userConfig = readConfig();
+  const fullConfig = loadConfig();
+  const themeName = userConfig.theme || 'default';
+  const lines = fullConfig.lines || [];
+
+  // Load raw theme to distinguish theme vs inject plugins
+  let themeLines = [];
+  const themesDir = existsSync(join(OMC_DIR, 'themes')) ? join(OMC_DIR, 'themes') : join(PACKAGE_ROOT, 'themes');
+  try {
+    const theme = JSON.parse(readFileSync(join(themesDir, `${themeName}.json`), 'utf8'));
+    themeLines = theme.lines || [];
+  } catch {}
+
+  log(`\n${C.bold}Current layout${C.reset} ${C.dim}(theme: ${themeName})${C.reset}\n`);
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const themeLine = themeLines[i] || { left: [], right: [] };
+    const themeLeft = new Set(themeLine.left || []);
+    const themeRight = new Set(themeLine.right || []);
+
+    const annotate = (name, themeSet) => {
+      if (themeSet.has(name)) return `${C.cyan}${name}${C.reset}`;
+      return `${C.magenta}${name}${C.reset} ${C.dim}(inject)${C.reset}`;
+    };
+
+    const leftStr = (line.left || []).map(n => annotate(n, themeLeft)).join('  ');
+    const rightStr = (line.right || []).map(n => annotate(n, themeRight)).join('  ');
+
+    log(`  ${C.bold}Line ${i + 1}:${C.reset}`);
+    log(`    left:  ${leftStr || `${C.dim}(empty)${C.reset}`}`);
+    log(`    right: ${rightStr || `${C.dim}(empty)${C.reset}`}`);
+  }
+
+  // Render preview
+  log(`\n${C.bold}Preview:${C.reset}\n`);
+  const runnerPath = existsSync(join(OMC_DIR, 'src', 'runner.js'))
+    ? join(OMC_DIR, 'src', 'runner.js')
+    : join(PACKAGE_ROOT, 'src', 'runner.js');
+  try {
+    const preview = execSync(`echo '${JSON.stringify(MOCK_DATA)}' | node ${runnerPath}`, { encoding: 'utf8' });
+    log(preview);
+  } catch {
+    log(`  ${C.dim}(preview unavailable)${C.reset}`);
+  }
+  log('');
+}
+
+// ─── Set Line Command ───────────────────────────
+
+function setLine(lineArg, args) {
+  const lineNum = parseInt(lineArg, 10);
+  if (!lineNum || lineNum < 1) {
+    warn('Usage: omc set <line> --left p1 p2 ... --right p3 p4 ...');
+    log(`\n${C.dim}Example: omc set 1 --left model-name git-branch --right session-cost${C.reset}\n`);
+    process.exit(1);
+  }
+
+  // Parse --left and --right sections
+  let left = [];
+  let right = [];
+  let current = null;
+  for (const arg of args) {
+    if (arg === '--left') { current = 'left'; continue; }
+    if (arg === '--right') { current = 'right'; continue; }
+    if (current === 'left') left.push(arg);
+    else if (current === 'right') right.push(arg);
+  }
+
+  if (left.length === 0 && right.length === 0) {
+    warn('Specify at least --left or --right with plugin names.');
+    log(`\n${C.dim}Example: omc set 1 --left model-name --right session-cost${C.reset}\n`);
+    process.exit(1);
+  }
+
+  // Validate plugin names
+  const known = allPluginNames();
+  for (const name of [...left, ...right]) {
+    if (!known.includes(name)) {
+      const suggestions = fuzzyMatch(name, known);
+      warn(`Plugin "${name}" not found.${suggestions.length ? ` Did you mean: ${suggestions.join(', ')}?` : ''}`);
+    }
+  }
+
+  const config = readConfig();
+
+  // Copy-on-first-write: if user hasn't set lines, copy from theme
+  if (!Array.isArray(config.lines)) {
+    const fullConfig = loadConfig();
+    config.lines = JSON.parse(JSON.stringify(fullConfig.lines || []));
+  }
+
+  // Ensure enough lines exist
+  while (config.lines.length < lineNum) {
+    config.lines.push({ left: [], right: [] });
+  }
+
+  const idx = lineNum - 1;
+  config.lines[idx] = { left, right };
+
+  // Remove inject for this line since we're setting it directly
+  if (config.inject && config.inject[String(lineNum)]) {
+    delete config.inject[String(lineNum)];
+    if (Object.keys(config.inject).length === 0) delete config.inject;
+  }
+
+  mkdirSync(dirname(CONFIG_PATH), { recursive: true });
+  writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2));
+
+  success(`Line ${lineNum} set:`);
+  log(`  left:  ${left.join(', ') || '(empty)'}`);
+  log(`  right: ${right.join(', ') || '(empty)'}`);
+  log(`\n${C.dim}Restart Claude Code to apply.${C.reset}\n`);
+}
+
+// ─── Theme Save Command ─────────────────────────
+
+function saveTheme(name) {
+  if (!name) {
+    warn('Usage: omc theme save <name>');
+    process.exit(1);
+  }
+
+  // Validate name
+  if (!/^[a-z][a-z0-9-]*$/.test(name)) {
+    warn(`Invalid theme name: "${name}"`);
+    log(`${C.dim}Names must start with a lowercase letter and contain only lowercase letters, numbers, and hyphens.${C.reset}\n`);
+    process.exit(1);
+  }
+
+  const fullConfig = loadConfig();
+  const theme = {
+    name,
+    description: `Custom theme saved from current config`,
+    lines: fullConfig.lines || [],
+    separator: fullConfig.separator || ' ',
+    plugins: fullConfig.plugins || {},
+  };
+
+  const themesDir = join(OMC_DIR, 'themes');
+  mkdirSync(themesDir, { recursive: true });
+  const themePath = join(themesDir, `${name}.json`);
+  writeFileSync(themePath, JSON.stringify(theme, null, 2));
+
+  success(`Theme saved: ${C.bold}${name}${C.reset}`);
+  log(`  ${C.dim}${themePath}${C.reset}`);
+  log(`\n${C.dim}Apply it: omc theme ${name}${C.reset}\n`);
+}
+
+// ─── Doctor Command ─────────────────────────────
+
+async function doctor() {
+  log(`\n${C.bold}oh-my-claude diagnostics${C.reset}\n`);
+
+  let ok = 0, warnings = 0, errors = 0;
+
+  const check = (label, status, msg) => {
+    if (status === 'ok') { ok++; log(`  ${C.green}OK${C.reset}   ${label}`); }
+    else if (status === 'warn') { warnings++; log(`  ${C.yellow}WARN${C.reset} ${label} — ${msg}`); }
+    else { errors++; log(`  ${C.red}ERR${C.reset}  ${label} — ${msg}`); }
+  };
+
+  // 1. Config file
+  let config = null;
+  if (!existsSync(CONFIG_PATH)) {
+    check('config.json', 'warn', `Not found at ${CONFIG_PATH} — using defaults`);
+  } else {
+    try {
+      config = JSON.parse(readFileSync(CONFIG_PATH, 'utf8'));
+      check('config.json', 'ok');
+    } catch (err) {
+      check('config.json', 'err', `Parse error: ${err.message}`);
+    }
+  }
+
+  // 2. Theme file
+  const themeName = config?.theme || 'default';
+  const themesDir = existsSync(join(OMC_DIR, 'themes')) ? join(OMC_DIR, 'themes') : join(PACKAGE_ROOT, 'themes');
+  const themePath = join(themesDir, `${themeName}.json`);
+  if (existsSync(themePath)) {
+    try {
+      JSON.parse(readFileSync(themePath, 'utf8'));
+      check(`theme "${themeName}"`, 'ok');
+    } catch (err) {
+      check(`theme "${themeName}"`, 'err', `Parse error: ${err.message}`);
+    }
+  } else {
+    check(`theme "${themeName}"`, 'err', `Not found at ${themePath}`);
+  }
+
+  // 3. Check each plugin in resolved lines
+  log('');
+  const fullConfig = loadConfig();
+  const lines = fullConfig.lines || [];
+  const pluginNames = new Set();
+  for (const line of lines) {
+    for (const name of [...(line.left || []), ...(line.right || [])]) {
+      pluginNames.add(name);
+    }
+  }
+
+  const known = allPluginNames();
+
+  for (const name of [...pluginNames].sort()) {
+    // Check existence
+    const resolved = await resolvePlugin(name);
+    if (!resolved) {
+      const suggestions = fuzzyMatch(name, known);
+      check(`plugin "${name}"`, 'err', `Not found${suggestions.length ? ` — did you mean: ${suggestions.join(', ')}?` : ''}`);
+      continue;
+    }
+
+    // Try rendering with MOCK_DATA
+    const pluginConfig = { ...(resolved.meta.defaultConfig || {}), ...((fullConfig.plugins && fullConfig.plugins[name]) || {}) };
+    try {
+      const result = resolved.render(MOCK_DATA, pluginConfig);
+      if (result === null) {
+        check(`plugin "${name}"`, 'ok', `(hidden with mock data)`);
+        ok--; // undo the ok from check
+        warnings++;
+        log(`  ${C.yellow}WARN${C.reset} plugin "${name}" — returns null with mock data`);
+      } else {
+        check(`plugin "${name}"`, 'ok');
+      }
+    } catch (err) {
+      check(`plugin "${name}"`, 'err', `render() threw: ${err.message}`);
+    }
+  }
+
+  // 4. Warn on orphaned plugin configs
+  log('');
+  if (config?.plugins) {
+    for (const name of Object.keys(config.plugins)) {
+      if (!pluginNames.has(name) && !known.includes(name)) {
+        check(`config for "${name}"`, 'warn', 'Config exists but plugin not found');
+      }
+    }
+  }
+
+  // 5. Warn on empty lines
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if ((!line.left || line.left.length === 0) && (!line.right || line.right.length === 0)) {
+      check(`line ${i + 1}`, 'warn', 'Empty line (no plugins)');
+    }
+  }
+
+  // Summary
+  log(`\n${C.bold}Summary:${C.reset} ${C.green}${ok} OK${C.reset}, ${C.yellow}${warnings} WARN${C.reset}, ${C.red}${errors} ERROR${C.reset}\n`);
+}
+
 // ─── Main ────────────────────────────────────────
 
 const command = process.argv[2] || 'install';
@@ -685,7 +1416,9 @@ switch (command) {
     listThemes();
     break;
   case 'theme':
-    if (process.argv[3]) {
+    if (process.argv[3] === 'save') {
+      saveTheme(process.argv[4]);
+    } else if (process.argv[3]) {
       setTheme(process.argv[3]).catch(err => { console.error(err); process.exit(1); });
     } else {
       listThemes();
@@ -698,9 +1431,32 @@ switch (command) {
   case 'create':
     createPlugin(process.argv[3], process.argv.slice(4));
     break;
-  case 'uninstall':
+  case 'add':
+    addPlugin(process.argv[3], process.argv.slice(4)).catch(err => { console.error(err); process.exit(1); });
+    break;
   case 'remove':
+    removePlugin(process.argv[3]);
+    break;
+  case 'uninstall':
     uninstall();
+    break;
+  case 'config':
+    configPlugin(process.argv[3], process.argv.slice(4)).catch(err => { console.error(err); process.exit(1); });
+    break;
+  case 'info':
+    pluginInfo(process.argv[3]).catch(err => { console.error(err); process.exit(1); });
+    break;
+  case 'test':
+    testPlugin(process.argv[3]).catch(err => { console.error(err); process.exit(1); });
+    break;
+  case 'show':
+    showLayout();
+    break;
+  case 'set':
+    setLine(process.argv[3], process.argv.slice(4));
+    break;
+  case 'doctor':
+    doctor().catch(err => { console.error(err); process.exit(1); });
     break;
   case 'validate':
     import(join(PACKAGE_ROOT, 'scripts', 'validate.js'));
@@ -710,17 +1466,33 @@ switch (command) {
   case 'help':
     log(`\n${C.bold}oh-my-claude${C.reset} — The framework for Claude Code statuslines\n`);
     log(`${C.bold}Usage:${C.reset} omc <command>\n`);
-    log(`${C.bold}Commands:${C.reset}`);
+    log(`${C.bold}Setup:${C.reset}`);
     log(`  ${C.cyan}install${C.reset}          Install oh-my-claude (interactive wizard)`);
     log(`  ${C.cyan}install <url>${C.reset}    Install a plugin from a git URL or local path`);
+    log(`  ${C.cyan}uninstall${C.reset}        Remove oh-my-claude from Claude Code`);
+    log(`\n${C.bold}Layout:${C.reset}`);
+    log(`  ${C.cyan}show${C.reset}             Show current layout with preview`);
+    log(`  ${C.cyan}add <name>${C.reset}       Add a plugin to the statusline`);
+    log(`                     ${C.dim}--line N (default: 1)  --left (default: right)${C.reset}`);
+    log(`  ${C.cyan}remove <name>${C.reset}    Remove a plugin from the statusline`);
+    log(`  ${C.cyan}set <line>${C.reset}       Set an entire line's plugins`);
+    log(`                     ${C.dim}--left p1 p2 ... --right p3 p4 ...${C.reset}`);
+    log(`\n${C.bold}Themes:${C.reset}`);
     log(`  ${C.cyan}theme${C.reset}            Set theme (omc theme <name>) or list themes`);
+    log(`  ${C.cyan}theme save <n>${C.reset}   Save current config as a reusable theme`);
+    log(`\n${C.bold}Plugins:${C.reset}`);
     log(`  ${C.cyan}list${C.reset}             List all available plugins`);
+    log(`  ${C.cyan}info <name>${C.reset}      Show plugin details and config options`);
+    log(`  ${C.cyan}config <name>${C.reset}    Show/set plugin config values`);
+    log(`                     ${C.dim}omc config weather units=f refresh=30${C.reset}`);
+    log(`  ${C.cyan}test <name>${C.reset}      Test a plugin with mock data`);
     log(`  ${C.cyan}create <name>${C.reset}    Create a new JS plugin`);
     log(`  ${C.cyan}create <name> --script${C.reset}`);
     log(`                     Create a script plugin (any language)`);
     log(`                     ${C.dim}--lang=python|bash (default: python)${C.reset}`);
+    log(`\n${C.bold}Diagnostics:${C.reset}`);
+    log(`  ${C.cyan}doctor${C.reset}           Run diagnostics on your setup`);
     log(`  ${C.cyan}validate${C.reset}         Run the plugin contract validator`);
-    log(`  ${C.cyan}uninstall${C.reset}        Remove oh-my-claude from Claude Code`);
     log(`  ${C.cyan}help${C.reset}             Show this help message\n`);
     break;
   default:
