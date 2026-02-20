@@ -187,17 +187,20 @@ See [screenshots](#screenshots) for each theme in action.
 
 ## External plugins
 
-Plugins that need APIs, platform-specific tools, or non-Node dependencies live in separate repos:
+Plugins that need APIs, platform-specific tools, or non-Node dependencies live in separate repos. Install with `omc install <url>`, then `omc add <name>`.
 
-| Plugin | What it does | Install |
-|--------|-------------|---------|
-| [weather](https://github.com/npow/omc-plugin-weather) | Current weather via wttr.in | `omc install https://github.com/npow/omc-plugin-weather` |
-
-After installing, add it to your statusline:
+| Plugin | What it does | Platform |
+|--------|-------------|----------|
+| [spotify](https://github.com/npow/omc-plugin-spotify) | `♫ Daft Punk — Get Lucky` | macOS, Linux |
+| [battery](https://github.com/npow/omc-plugin-battery) | `🔋 85%` / `⚡ 43%` charging | macOS, Linux |
+| [github-pr](https://github.com/npow/omc-plugin-github-pr) | `PR #42 ✓ approved` | requires `gh` CLI |
+| [cpu](https://github.com/npow/omc-plugin-cpu) | `cpu 12%` with color thresholds | macOS, Linux |
+| [hackernews](https://github.com/npow/omc-plugin-hackernews) | `▲847 Show HN: ...` top headline | any |
+| [weather](https://github.com/npow/omc-plugin-weather) | `⛅ 72°F` current conditions | any |
 
 ```bash
-omc add weather
-omc config weather location="San Francisco" units=c
+omc install https://github.com/npow/omc-plugin-spotify
+omc add spotify
 ```
 
 ---
