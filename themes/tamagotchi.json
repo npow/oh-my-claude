@@ -3,7 +3,7 @@
   "description": "Personality-forward: tamagotchi pet, growing garden, draining coffee, and vibes.",
   "lines": [
     {
-      "left": ["model-name", "directory", "git-branch", "git-status"],
+      "left": ["model-name", "directory", "git-branch", "git-status", "activity"],
       "right": ["lines-changed", "session-timer"]
     },
     {
@@ -67,6 +67,9 @@
     },
     "streak": {
       "minDays": 3
+    },
+    "activity": {
+      "style": "dim"
     }
   }
 }

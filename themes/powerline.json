@@ -3,7 +3,7 @@
   "description": "Full powerline with Nerd Font icons and arrow separators. Requires a Nerd Font.",
   "lines": [
     {
-      "left": ["model-name", "separator-arrow", "directory", "separator-arrow", "git-branch", "git-status", "git-ahead-behind"],
+      "left": ["model-name", "separator-arrow", "directory", "separator-arrow", "git-branch", "git-status", "git-ahead-behind", "activity"],
       "right": ["lines-changed", "separator-arrow", "session-timer"]
     },
     {
@@ -75,6 +75,9 @@
     "separator-arrow": {
       "style": "dim",
       "char": "\ue0b0"
+    },
+    "activity": {
+      "style": "dim"
     }
   }
 }

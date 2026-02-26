@@ -19,4 +19,10 @@ export const MOCK_DATA = {
   workspace: { current_dir: '/Users/dev/myproject', project_dir: '/Users/dev/myproject' },
   session_id: 'demo-abc123',
   version: '2.1.34',
+  _hooks: {
+    last_tool: { name: 'Edit', ts: Date.now() },
+    tool_count: 42,
+    error_count: 3,
+    compacting: false,
+  },
 };

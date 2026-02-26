@@ -14,19 +14,23 @@ A statusline framework for Claude Code -- like oh-my-zsh but for Claude Code's `
 ## File Structure
 
 ```
-bin/omc.js              CLI entry point (installs/configures statusline)
+bin/omc.js              CLI entry point (installs/configures statusline + hooks)
 src/
-  runner.js             Main pipeline: stdin -> render -> stdout
+  runner.js             Main pipeline: stdin -> hooks merge -> render -> stdout
   config.js             Theme + user config resolution
   compositor.js         Multi-line left/right alignment and output
   color.js              Style string -> ANSI escape code parser
   cache.js              TTL cache for shell command results
+  hooks.js              Reads hooks state from /tmp/omc/<session_id>/state.json
   mock-data.js          Canonical mock data for previews and tests
   plugins/              Built-in plugins (one file per plugin)
-    model.js            Model name/id display
-    context.js          Context window usage
-    cost.js             Session cost in USD
+    activity.js         Current tool activity (hooks-powered)
+    model-name.js       Model name/id display
+    context-percent.js  Context window usage
+    session-cost.js     Session cost in USD
     ...
+hooks/
+  collector.js          Hook handler for PreToolUse/PostToolUse/PreCompact events
 themes/
   default.json          Ships with the framework
 plugins/                Bundled script plugins (Python/Bash)
@@ -90,6 +94,8 @@ The `data` object passed to `render()` comes directly from Claude Code. Key path
 - `session_id`, `transcript_path`, `version`
 - `output_style.name`, `vim.mode`, `agent.name`
 - `exceeds_200k_tokens`
+- `_hooks.last_tool.name`, `_hooks.last_tool.ts` (from hooks collector)
+- `_hooks.tool_count`, `_hooks.error_count`, `_hooks.compacting`
 
 Full reference: [docs/plugin-contract.md](docs/plugin-contract.md)
 

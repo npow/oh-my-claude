@@ -14,6 +14,9 @@ Claude Code (stdin JSON)
    config.js           Load theme + user overrides, resolve per-plugin config
         |
         v
+   hooks.js            Read hooks state from /tmp/omc/<session_id>/state.json
+        |              Merge as data._hooks (null if unavailable)
+        v
    plugins/*.js        Each plugin's render(data, config) called
         |
         v
@@ -278,3 +281,68 @@ Every plugin render call is wrapped in a try/catch. If a plugin throws:
 3. No error output contaminates stdout. The statusline is a display-only surface.
 
 This guarantee means a single broken plugin can never take down the entire statusline.
+
+## Hooks Integration
+
+Claude Code's hooks system (`PreToolUse`, `PostToolUse`, `PostToolUseFailure`, `PreCompact`) provides tool-level event data that the statusline JSON doesn't include. oh-my-claude bridges this gap with a hooks collector.
+
+### Data Flow
+
+```
+Claude Code
+   |
+   |-- hooks event (stdin JSON) --> hooks/collector.js --> /tmp/omc/<session_id>/state.json
+   |
+   |-- statusline update (stdin JSON) --> src/runner.js
+                                             |
+                                             +--> src/hooks.js reads state.json
+                                             |    merges as data._hooks
+                                             v
+                                          plugins render with hooks data
+```
+
+### hooks/collector.js
+
+A single Node.js script registered for all hook events. On each invocation:
+
+1. Reads hook JSON from stdin (contains `session_id`, `hook_type`, `tool_name`)
+2. Loads existing state from `/tmp/omc/<session_id>/state.json` (or creates fresh state)
+3. Updates state based on event type:
+   - `PreToolUse`: sets `last_tool` with tool name and timestamp
+   - `PostToolUse`: increments `tool_count`, updates `last_tool`
+   - `PostToolUseFailure`: increments both `tool_count` and `error_count`
+   - `PreCompact`: sets `compacting = true`
+4. Writes state atomically (write to temp file, then rename)
+5. Exits 0 immediately (never blocks Claude Code)
+
+### State Schema
+
+```json
+{
+  "last_tool": { "name": "Bash", "ts": 1708000000 },
+  "tool_count": 42,
+  "error_count": 3,
+  "compacting": false
+}
+```
+
+### src/hooks.js
+
+Reads the state file for a given session ID. Returns the parsed object or `null` if:
+- Session ID is missing
+- State file doesn't exist
+- State file is older than 30 seconds (stale)
+
+### Runner Integration
+
+In `src/runner.js`, after parsing stdin and loading config, the hooks state is read and merged:
+
+```js
+data._hooks = readHooksState(data?.session_id) || null;
+```
+
+This is fully backward compatible — existing plugins that don't use `_hooks` are unaffected. If hooks are not installed, `data._hooks` is simply `null`.
+
+### Installation
+
+`omc install` registers the collector in `~/.claude/settings.json` alongside the statusline command. `omc uninstall` removes both.

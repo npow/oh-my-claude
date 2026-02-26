@@ -3,7 +3,7 @@
   "description": "Dev environment dashboard. Port health, CI status, PR reviews, uncommitted changes.",
   "lines": [
     {
-      "left": ["model-name", "directory", "git-branch", "git-ahead-behind", "ci-status"],
+      "left": ["model-name", "directory", "git-branch", "git-ahead-behind", "ci-status", "activity"],
       "right": ["pr-reviews", "session-diff", "session-timer"]
     },
     {
@@ -76,6 +76,9 @@
     "session-cost": {
       "style": "dim",
       "format": "$"
+    },
+    "activity": {
+      "style": "dim"
     }
   }
 }

@@ -86,9 +86,13 @@ async function install() {
   // 4. Copy framework files
   const srcDest = join(OMC_DIR, 'src');
   const themesDest = join(OMC_DIR, 'themes');
+  const hooksDest = join(OMC_DIR, 'hooks');
   const pluginsDest = join(OMC_DIR, 'plugins');
   cpSync(join(PACKAGE_ROOT, 'src'), srcDest, { recursive: true });
   cpSync(join(PACKAGE_ROOT, 'themes'), themesDest, { recursive: true });
+  if (existsSync(join(PACKAGE_ROOT, 'hooks'))) {
+    cpSync(join(PACKAGE_ROOT, 'hooks'), hooksDest, { recursive: true });
+  }
   cpSync(join(PACKAGE_ROOT, 'package.json'), join(OMC_DIR, 'package.json'));
   // Copy bundled script plugins (only new ones — don't overwrite user's existing plugins)
   if (existsSync(join(PACKAGE_ROOT, 'plugins'))) {
@@ -126,6 +130,24 @@ async function install() {
     type: 'command',
     command: `node ${join(OMC_DIR, 'src', 'runner.js')}`,
   };
+
+  // Register hooks for activity tracking
+  const collectorCmd = `node ${join(OMC_DIR, 'hooks', 'collector.js')}`;
+  const hookEntry = { hooks: [{ type: 'command', command: collectorCmd }] };
+  if (!settings.hooks) settings.hooks = {};
+  for (const event of ['PreToolUse', 'PostToolUse', 'PostToolUseFailure', 'PreCompact']) {
+    if (!Array.isArray(settings.hooks[event])) {
+      settings.hooks[event] = [hookEntry];
+    } else {
+      // Only add if not already registered
+      const alreadyRegistered = settings.hooks[event].some(
+        (e) => e.hooks?.some((h) => h.command === collectorCmd)
+      );
+      if (!alreadyRegistered) {
+        settings.hooks[event].push(hookEntry);
+      }
+    }
+  }
 
   writeFileSync(SETTINGS_PATH, JSON.stringify(settings, null, 2));
   success('Updated ' + SETTINGS_PATH);
@@ -827,13 +849,32 @@ async function setTheme(name) {
 function uninstall() {
   log(`\n${C.bold}Uninstalling oh-my-claude...${C.reset}\n`);
 
-  // Remove statusLine from settings
+  // Remove statusLine and hooks from settings
   if (existsSync(SETTINGS_PATH)) {
     try {
       const settings = JSON.parse(readFileSync(SETTINGS_PATH, 'utf8'));
       delete settings.statusLine;
+
+      // Remove omc hooks entries
+      if (settings.hooks) {
+        const collectorPattern = 'collector.js';
+        for (const event of ['PreToolUse', 'PostToolUse', 'PostToolUseFailure', 'PreCompact']) {
+          if (Array.isArray(settings.hooks[event])) {
+            settings.hooks[event] = settings.hooks[event].filter(
+              (e) => !e.hooks?.some((h) => h.command?.includes(collectorPattern))
+            );
+            if (settings.hooks[event].length === 0) {
+              delete settings.hooks[event];
+            }
+          }
+        }
+        if (Object.keys(settings.hooks).length === 0) {
+          delete settings.hooks;
+        }
+      }
+
       writeFileSync(SETTINGS_PATH, JSON.stringify(settings, null, 2));
-      success('Removed statusLine from ' + SETTINGS_PATH);
+      success('Removed statusLine and hooks from ' + SETTINGS_PATH);
     } catch {
       warn('Could not update settings.json');
     }

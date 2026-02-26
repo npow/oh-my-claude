@@ -3,7 +3,7 @@
   "description": "Storytelling: third-person narration, vibes, growing garden, and streaks.",
   "lines": [
     {
-      "left": ["model-name", "directory", "git-branch"],
+      "left": ["model-name", "directory", "git-branch", "activity"],
       "right": ["lines-changed", "session-timer"]
     },
     {
@@ -62,6 +62,9 @@
     "garden": {},
     "streak": {
       "minDays": 3
+    },
+    "activity": {
+      "style": "dim"
     }
   }
 }

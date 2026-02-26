@@ -3,7 +3,7 @@
   "description": "Time-aware statusline. Clock, work/break cycle, day progress, break reminders.",
   "lines": [
     {
-      "left": ["model-name", "directory", "git-branch", "git-status"],
+      "left": ["model-name", "directory", "git-branch", "git-status", "activity"],
       "right": ["package-version", "git-last-commit", "clock"]
     },
     {
@@ -68,6 +68,9 @@
     "session-cost": {
       "style": "dim",
       "format": "$"
+    },
+    "activity": {
+      "style": "dim"
     }
   }
 }

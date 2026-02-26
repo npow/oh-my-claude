@@ -63,33 +63,37 @@ function readJson(filepath) {
  */
 export function getDefaultConfig() {
   return {
-    separator: ' | ',
+    separator: ' ',
     lines: [
       {
-        left: ['model', 'context', 'cost'],
-        right: ['project'],
+        left: ['model-name', 'directory', 'git-branch', 'git-status', 'activity'],
+        right: ['smart-nudge', 'context-percent', 'session-cost'],
       },
     ],
     plugins: {
-      model: {
+      'model-name': {
         style: 'bold cyan',
       },
-      context: {
-        style: 'yellow',
+      'context-percent': {
         warn_threshold: 60,
         critical_threshold: 80,
-        warn_style: 'bold yellow',
-        critical_style: 'bold red',
       },
-      cost: {
+      'session-cost': {
+        plan: 'auto',
+      },
+      'git-branch': {
         style: 'green',
-        warn_threshold: 5,
-        critical_threshold: 10,
-        warn_style: 'bold yellow',
-        critical_style: 'bold red',
       },
-      project: {
+      'git-status': {
+        style: 'yellow',
+      },
+      'directory': {
         style: 'blue',
+        format: 'basename',
+      },
+      'activity': {
+        style: 'dim',
+        stale_after_ms: 10000,
       },
     },
   };

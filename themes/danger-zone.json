@@ -3,7 +3,7 @@
   "description": "Everything is on fire: dead tamagotchi, wilted garden, empty coffee, death metal.",
   "lines": [
     {
-      "left": ["model-name", "directory", "git-branch", "git-status"],
+      "left": ["model-name", "directory", "git-branch", "git-status", "activity"],
       "right": ["lines-changed", "session-timer"]
     },
     {
@@ -69,6 +69,9 @@
     },
     "emoji-story": {
       "style": ""
+    },
+    "activity": {
+      "style": "dim"
     }
   }
 }

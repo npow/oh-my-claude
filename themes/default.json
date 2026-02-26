@@ -3,8 +3,8 @@
   "description": "Clean two-line statusline. No special fonts required. Works everywhere.",
   "lines": [
     {
-      "left": ["model-name", "directory", "git-branch", "git-status"],
-      "right": ["git-last-commit", "lines-changed", "session-timer"]
+      "left": ["model-name", "directory", "git-branch", "git-status", "activity"],
+      "right": ["smart-nudge", "git-last-commit", "lines-changed", "session-timer"]
     },
     {
       "left": ["context-bar"],
@@ -57,6 +57,10 @@
       "plan": null,
       "styleWarn": "bold yellow",
       "styleCritical": "bold red"
+    },
+    "activity": {
+      "style": "dim",
+      "stale_after_ms": 10000
     }
   }
 }

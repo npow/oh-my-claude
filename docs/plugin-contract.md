@@ -69,6 +69,14 @@ Complete field reference:
 | `vim.mode` | `string` | Current vim mode if vim keybindings are active |
 | `agent.name` | `string` | Agent name if running as a sub-agent |
 | `exceeds_200k_tokens` | `boolean` | Whether session has exceeded 200k token threshold |
+| `_hooks` | `object\|null` | Hooks state from the collector (see below) |
+| `_hooks.last_tool.name` | `string` | Name of the last tool used (e.g., "Bash", "Edit") |
+| `_hooks.last_tool.ts` | `number` | Timestamp (ms since epoch) of the last tool use |
+| `_hooks.tool_count` | `number` | Total number of tool uses this session |
+| `_hooks.error_count` | `number` | Number of tool failures this session |
+| `_hooks.compacting` | `boolean` | Whether a compaction is in progress |
+
+The `_hooks` field is populated by the framework from the hooks collector state file. It is `null` if hooks are not installed or the state file is missing/stale (>30s old). Plugins that use `_hooks` data must handle `null` gracefully.
 
 #### `config`
 

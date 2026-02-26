@@ -3,7 +3,7 @@
   "description": "Deep session danger: boss battles, storms, panic, and battle music.",
   "lines": [
     {
-      "left": ["model-name", "directory", "git-branch", "git-status"],
+      "left": ["model-name", "directory", "git-branch", "git-status", "activity"],
       "right": ["lines-changed", "session-timer"]
     },
     {
@@ -67,6 +67,9 @@
     "smart-nudge": {},
     "emoji-story": {
       "style": ""
+    },
+    "activity": {
+      "style": "dim"
     }
   }
 }

@@ -3,7 +3,7 @@
   "description": "Relatable humor: fake Slack messages from a coworker and fortune cookie wisdom.",
   "lines": [
     {
-      "left": ["model-name", "directory", "git-branch", "git-status"],
+      "left": ["model-name", "directory", "git-branch", "git-status", "activity"],
       "right": ["lines-changed", "session-timer"]
     },
     {
@@ -62,6 +62,9 @@
     "fortune-cookie": {
       "showEmoji": true,
       "style": "dim italic"
+    },
+    "activity": {
+      "style": "dim"
     }
   }
 }

@@ -97,8 +97,11 @@ function renderSide(parts, separator) {
 export function compose(lines, terminalWidth, separator) {
   if (!lines || !Array.isArray(lines) || lines.length === 0) return '';
 
-  // Subtract margin for Claude Code's own statusline content ("1,048,576 tokens" etc.)
-  const width = (terminalWidth || detectWidth()) - 25;
+  // Subtract margin for Claude Code's own statusline content.
+  // Claude Code appends its own text after ours: "Context left until auto-compact: NN%"
+  // is ~42 chars, plus token counts like "1,048,576 tokens" (~20 chars).
+  // Use 45 as a safe buffer to prevent right-side plugins from being pushed off-screen.
+  const width = (terminalWidth || detectWidth()) - 45;
   const sep = separator || ' | ';
   const outputLines = [];
 

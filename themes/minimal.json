@@ -3,7 +3,7 @@
   "description": "Single-line, text-only. No bars, no icons, no fuss.",
   "lines": [
     {
-      "left": ["directory", "git-branch", "git-status"],
+      "left": ["directory", "git-branch", "git-status", "activity"],
       "right": ["context-percent", "session-cost"]
     }
   ],
@@ -32,6 +32,9 @@
     "session-cost": {
       "style": "dim",
       "format": "$"
+    },
+    "activity": {
+      "style": "dim"
     }
   }
 }

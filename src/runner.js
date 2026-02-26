@@ -11,6 +11,7 @@ import { loadConfig } from './config.js';
 import { compose } from './compositor.js';
 import { builtinPlugins } from './plugins/index.js';
 import { discoverPlugins } from './plugins.js';
+import { readHooksState } from './hooks.js';
 
 // Silently ignore EPIPE — Claude Code closing the pipe is normal, not an error.
 process.stdout.on('error', (err) => {
@@ -76,7 +77,15 @@ async function main() {
     const config = loadConfig();
     const separator = config.separator || ' | ';
 
-    // 4. Discover plugins and merge with built-ins
+    // 4. Merge hooks state (backward compatible — data._hooks is null if unavailable)
+    try {
+      const hooksState = readHooksState(data?.session_id);
+      data._hooks = hooksState || null;
+    } catch {
+      data._hooks = null;
+    }
+
+    // 5. Discover plugins and merge with built-ins
     //    User plugins override built-ins if they share the same name.
     let allPlugins = builtinPlugins;
     try {
@@ -88,7 +97,7 @@ async function main() {
       // Plugin discovery failed — continue with built-ins only
     }
 
-    // 5. Process each line from config
+    // 6. Process each line from config
     const lineResults = [];
 
     const configLines = config.lines;
@@ -106,7 +115,7 @@ async function main() {
       lineResults.push({ left: leftParts, right: rightParts });
     }
 
-    // 6. Compose and output — always end with ANSI reset to prevent state leaking
+    // 7. Compose and output — always end with ANSI reset to prevent state leaking
     const output = compose(lineResults, undefined, separator);
     process.stdout.write(output + '\x1b[0m');
   } catch {

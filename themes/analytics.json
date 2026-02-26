@@ -3,7 +3,7 @@
   "description": "Metrics dashboard. Cost rate, token efficiency, context ETA, and git details.",
   "lines": [
     {
-      "left": ["model-name", "directory", "git-branch", "git-ahead-behind"],
+      "left": ["model-name", "directory", "git-branch", "git-ahead-behind", "activity"],
       "right": ["lines-changed", "efficiency-score", "session-timer"]
     },
     {
@@ -75,6 +75,9 @@
       "format": "$",
       "styleWarn": "bold yellow",
       "styleCritical": "bold red"
+    },
+    "activity": {
+      "style": "dim"
     }
   }
 }
