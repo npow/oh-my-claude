@@ -1,5 +1,9 @@
 # oh-my-claude
 
+[![npm version](https://img.shields.io/npm/v/@npow/oh-my-claude)](https://www.npmjs.com/package/@npow/oh-my-claude)
+[![CI](https://img.shields.io/github/actions/workflow/status/npow/oh-my-claude/ci.yml?label=CI)](https://github.com/npow/oh-my-claude/actions/workflows/ci.yml)
+[![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+
 **Your Claude Code session is invisible. oh-my-claude makes it visible.**
 
 Context window filling up? You won't know until Claude gets confused. Burning $15/hour? No indicator. CI failed after your last push? Switch to a browser to find out. Dev server crashed? You'll debug for 10 minutes before noticing.
@@ -23,10 +27,6 @@ omc install
 Two commands. Takes effect immediately.
 
 87 plugins. 12 themes. Zero npm dependencies. [Write your own](#write-your-own-plugin) in minutes.
-
-[![npm version](https://img.shields.io/npm/v/@npow/oh-my-claude)](https://www.npmjs.com/package/@npow/oh-my-claude)
-[![CI](https://img.shields.io/github/actions/workflow/status/npow/oh-my-claude/ci.yml?label=CI)](https://github.com/npow/oh-my-claude/actions/workflows/ci.yml)
-[![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 ---
 
